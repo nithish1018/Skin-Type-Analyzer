@@ -2,7 +2,8 @@ import '@mediapipe/face_detection'
 import type { Detection, FaceDetection as MediaPipeFaceDetection, InputImage } from '@mediapipe/face_detection'
 import type { FaceCropResult, FaceDetectionOutcome, FaceLandmarkPoint } from '../types/face'
 
-const CDN_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection'
+const MEDIAPIPE_ASSET_BASE = '/mediapipe'
+const MEDIAPIPE_CORE_SCRIPT = `${MEDIAPIPE_ASSET_BASE}/face_detection.js`
 
 declare global {
     interface Window {
@@ -13,6 +14,7 @@ declare global {
 let detectorPromise: Promise<MediaPipeFaceDetection> | null = null
 let detectionQueue: Promise<void> = Promise.resolve()
 let activeSelfieMode: boolean | null = null
+let loaderPromise: Promise<void> | null = null
 
 const clamp = (value: number, min: number, max: number): number => {
     return Math.min(max, Math.max(min, value))
@@ -29,16 +31,52 @@ const getImageSize = (image: InputImage): { width: number; height: number } => {
     }
 }
 
+const loadMediaPipeCoreScript = async (): Promise<void> => {
+    if (window.FaceDetection) {
+        return
+    }
+
+    if (!loaderPromise) {
+        loaderPromise = new Promise<void>((resolve, reject) => {
+            const existing = document.querySelector(`script[src="${MEDIAPIPE_CORE_SCRIPT}"]`) as HTMLScriptElement | null
+            if (existing) {
+                if (window.FaceDetection) {
+                    resolve()
+                    return
+                }
+
+                existing.addEventListener('load', () => resolve(), { once: true })
+                existing.addEventListener('error', () => reject(new Error('Failed to load MediaPipe core script.')), { once: true })
+                return
+            }
+
+            const script = document.createElement('script')
+            script.src = MEDIAPIPE_CORE_SCRIPT
+            script.async = true
+            script.onload = () => resolve()
+            script.onerror = () => reject(new Error('Failed to load MediaPipe core script.'))
+            document.head.appendChild(script)
+        })
+    }
+
+    await loaderPromise
+}
+
 const getFaceDetector = async (): Promise<MediaPipeFaceDetection> => {
     if (!detectorPromise) {
         detectorPromise = (async () => {
-            const FaceDetectionCtor = window.FaceDetection
+            let FaceDetectionCtor = window.FaceDetection
+            if (!FaceDetectionCtor) {
+                await loadMediaPipeCoreScript()
+                FaceDetectionCtor = window.FaceDetection
+            }
+
             if (!FaceDetectionCtor) {
                 throw new Error('MediaPipe FaceDetection failed to load.')
             }
 
             const detector = new FaceDetectionCtor({
-                locateFile: (file) => `${CDN_BASE}/${file}`,
+                locateFile: (file) => `${MEDIAPIPE_ASSET_BASE}/${file}`,
             })
             detector.setOptions({
                 selfieMode: false,
@@ -194,8 +232,9 @@ const runFaceDetection = async (image: InputImage, mirrorForFeedback: boolean): 
             })
         })
 
-        detector.send({ image }).catch(() => {
-            settle(failedOutcome('Face detection temporarily unavailable. Please retry.'))
+        detector.send({ image }).catch((error) => {
+            const reason = error instanceof Error ? error.message : 'Unknown detector error'
+            settle(failedOutcome(`Face detection temporarily unavailable (${reason}). Please retry.`))
         })
     })
 }
@@ -209,7 +248,10 @@ export const detectFace = async (
     const detectionPromise = detectionQueue
         .catch(() => undefined)
         .then(() => runFaceDetection(image, mirrorForFeedback))
-        .catch(() => failedOutcome('Face detection unavailable. Please retry.'))
+        .catch((error) => {
+            const reason = error instanceof Error ? error.message : 'Unknown initialization error'
+            return failedOutcome(`Face detection unavailable (${reason}). Please retry.`)
+        })
 
     detectionQueue = detectionPromise.then(() => undefined).catch(() => undefined)
     return detectionPromise
