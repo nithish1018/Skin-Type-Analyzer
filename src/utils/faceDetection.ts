@@ -11,15 +11,7 @@ declare global {
 }
 
 let detectorPromise: Promise<MediaPipeFaceDetection> | null = null
-let detectionQueue: Promise<FaceDetectionOutcome> = Promise.resolve({
-    status: 'no-face',
-    message: null,
-    guidance: 'Align your face inside the circle',
-    clarity: 0,
-    faceBox: null,
-    landmarks: [],
-    faceCount: 0,
-})
+let detectionQueue: Promise<void> = Promise.resolve()
 
 const clamp = (value: number, min: number, max: number): number => {
     return Math.min(max, Math.max(min, value))
@@ -63,15 +55,10 @@ const guidanceFromFace = (
     box: { x: number; y: number; width: number; height: number },
     frameWidth: number,
     frameHeight: number,
-    mirrorForFeedback: boolean,
 ): string => {
     const areaRatio = (box.width * box.height) / Math.max(1, frameWidth * frameHeight)
-    let centerX = (box.x + box.width / 2) / Math.max(1, frameWidth)
+    const centerX = (box.x + box.width / 2) / Math.max(1, frameWidth)
     const centerY = (box.y + box.height / 2) / Math.max(1, frameHeight)
-
-    if (mirrorForFeedback) {
-        centerX = 1 - centerX
-    }
 
     if (areaRatio < 0.11) return 'Too far'
     if (areaRatio > 0.48) return 'Too close'
@@ -79,7 +66,7 @@ const guidanceFromFace = (
     if (centerX > 0.64) return 'Move left'
     if (centerY < 0.34) return 'Move down'
     if (centerY > 0.68) return 'Move up'
-    return 'Align your face inside the circle'
+    return 'Face aligned'
 }
 
 const transformDetection = (
@@ -126,6 +113,13 @@ const runFaceDetection = async (image: InputImage, mirrorForFeedback: boolean): 
     }
 
     return new Promise<FaceDetectionOutcome>((resolve, reject) => {
+        detector.setOptions({
+            selfieMode: mirrorForFeedback,
+            model: 'short',
+            minDetectionConfidence: 0.62,
+        })
+        detector.reset()
+
         detector.onResults((results) => {
             const detections = results.detections ?? []
 
@@ -162,7 +156,7 @@ const runFaceDetection = async (image: InputImage, mirrorForFeedback: boolean): 
             resolve({
                 status: 'single-face',
                 message: null,
-                guidance: guidanceFromFace(transformed.box, width, height, mirrorForFeedback),
+                guidance: guidanceFromFace(transformed.box, width, height),
                 clarity,
                 faceBox: transformed.box,
                 landmarks: transformed.landmarks,
@@ -182,8 +176,12 @@ export const detectFace = async (
 ): Promise<FaceDetectionOutcome> => {
     const mirrorForFeedback = options?.mirrorForFeedback ?? false
 
-    detectionQueue = detectionQueue.then(() => runFaceDetection(image, mirrorForFeedback))
-    return detectionQueue
+    const detectionPromise = detectionQueue
+        .catch(() => undefined)
+        .then(() => runFaceDetection(image, mirrorForFeedback))
+
+    detectionQueue = detectionPromise.then(() => undefined).catch(() => undefined)
+    return detectionPromise
 }
 
 export const cropFace = (sourceCanvas: HTMLCanvasElement, faceBox: FaceCropResult['bounds']): FaceCropResult => {

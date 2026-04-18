@@ -112,19 +112,23 @@ export function CameraView({
 
         return {
             box: {
-                x: cameraFacing === 'user'
-                    ? stageSize.width - (mapX(faceBox.x) + faceBox.width * scale)
-                    : mapX(faceBox.x),
+                x: mapX(faceBox.x),
                 y: mapY(faceBox.y),
                 width: faceBox.width * scale,
                 height: faceBox.height * scale,
             },
             landmarks: landmarks.map((point) => ({
-                x: cameraFacing === 'user' ? stageSize.width - mapX(point.x) : mapX(point.x),
+                x: mapX(point.x),
                 y: mapY(point.y),
             })),
         }
     })()
+
+    const hasAlignedFace = faceGuidance === 'Face aligned' && !faceMessage && !error
+    const statusText = error ? error : (faceMessage ?? faceGuidance)
+    const statusClassName = hasAlignedFace
+        ? 'border-emerald-400/45 bg-emerald-900/35 text-emerald-100'
+        : 'border-slate-600/70 bg-slate-900/70 text-slate-100'
 
     return (
         <section className="relative flex h-[100svh] w-full flex-col overflow-hidden bg-black">
@@ -164,7 +168,7 @@ export function CameraView({
                     </div>
                 )}
 
-                <div className="pointer-events-none absolute left-1/2 top-[44%] h-[min(72vw,18rem)] w-[min(72vw,18rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-200/70 shadow-[0_0_50px_rgba(103,232,249,0.35)]">
+                <div className="pointer-events-none absolute left-1/2 top-[43%] h-[min(58vw,13rem)] w-[min(58vw,13rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-200/70 shadow-[0_0_40px_rgba(103,232,249,0.3)]">
                     <div className="absolute inset-4 rounded-full border border-cyan-100/50" />
                 </div>
 
@@ -184,12 +188,8 @@ export function CameraView({
 
             <div className="border-t border-white/10 bg-slate-950/70 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl">
                 <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-                    <p className="rounded-xl border border-cyan-200/40 bg-slate-900/70 px-3 py-2 text-center text-xs font-medium text-cyan-100 backdrop-blur-md">
-                        Align your face inside the circle
-                    </p>
-
-                    <p className="rounded-xl border border-slate-600/70 bg-slate-900/70 px-3 py-2 text-center text-sm text-slate-100 backdrop-blur-md">
-                        {faceGuidance}
+                    <p className={`rounded-xl border px-3 py-2 text-center text-sm font-medium backdrop-blur-md ${statusClassName}`}>
+                        {hasAlignedFace ? 'Face aligned' : statusText}
                     </p>
 
                     {videoDevices.length > 1 && (
@@ -209,21 +209,9 @@ export function CameraView({
                         </label>
                     )}
 
-                    {isIOSSafari && (
+                    {isIOSSafari && (error || !stream) && (
                         <p className="rounded-xl border border-cyan-300/35 bg-cyan-900/35 px-3 py-2 text-center text-xs text-cyan-100">
                             iOS Safari tip: if camera stays black, switch lens or tap Retry Access.
-                        </p>
-                    )}
-
-                    {error && (
-                        <p className="rounded-xl border border-rose-400/45 bg-rose-900/35 px-4 py-3 text-center text-sm text-rose-100 backdrop-blur-md">
-                            {error}
-                        </p>
-                    )}
-
-                    {faceMessage && !error && (
-                        <p className="rounded-xl border border-amber-400/45 bg-amber-900/35 px-4 py-3 text-center text-sm text-amber-100 backdrop-blur-md">
-                            {faceMessage}
                         </p>
                     )}
 
@@ -240,7 +228,7 @@ export function CameraView({
                     {isStarting && (
                         <p className="text-center text-sm text-cyan-100/80">Starting camera...</p>
                     )}
-                    <div className="flex justify-center pb-1 pt-1">
+                    <div className="flex justify-center pb-1 pt-2">
                         <CaptureButton onClick={onCapture} disabled={!stream || isStarting || Boolean(error) || !canCapture} />
                     </div>
                 </div>
