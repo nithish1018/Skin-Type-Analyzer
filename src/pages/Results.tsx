@@ -110,6 +110,12 @@ const getRiskLabel = (value: number): string => {
     return 'Low'
 }
 
+interface MetricBar {
+    label: string
+    value: number
+    gradient: string
+}
+
 const getHowItWasCalculated = (result: SkinAnalysisResult): string[] => {
     const oilinessLine = result.oiliness >= result.hydration
         ? 'The skin looked shinier than dry, so the app leaned more toward an oily or combination type.'
@@ -143,6 +149,11 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
     const howItWasCalculated = getHowItWasCalculated(result)
     const appUrl = window.location.origin + window.location.pathname
     const [isSharing, setIsSharing] = useState(false)
+    const metricBars: MetricBar[] = [
+        { label: 'Oiliness', value: result.oiliness, gradient: 'linear-gradient(90deg,#D8A7B1 0%,#E8CFC1 100%)' },
+        { label: 'Hydration', value: result.hydration, gradient: 'linear-gradient(90deg,#A8C3A0 0%,#DCE8D8 100%)' },
+        { label: 'Acne Risk', value: result.acneRisk, gradient: 'linear-gradient(90deg,#D8A7B1 0%,#F1D8DF 100%)' },
+    ]
 
     const onShare = async () => {
         if (isSharing) {
@@ -185,79 +196,127 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
     }
 
     return (
-        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_10%,rgba(34,211,238,0.22),transparent_40%),radial-gradient(circle_at_85%_25%,rgba(16,185,129,0.16),transparent_35%),linear-gradient(170deg,#030712_0%,#0b1220_58%,#081527_100%)] px-5 pb-16 pt-8 text-slate-100">
+        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_10%,rgba(232,207,193,0.65),transparent_45%),radial-gradient(circle_at_85%_20%,rgba(216,167,177,0.22),transparent_35%),linear-gradient(170deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-16 pt-8 text-skin-text">
             <motion.section
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45 }}
                 className="mx-auto flex max-w-md flex-col gap-5"
             >
-                <article className="rounded-3xl border border-cyan-200/20 bg-slate-900/50 p-6 backdrop-blur-xl">
-                    <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Analysis Complete</p>
-                    <h1 className="mt-2 text-3xl font-semibold text-cyan-50">{result.skinType}</h1>
-                    <p className="mt-1 text-sm text-slate-300">Confidence score: {result.confidence}%</p>
+                <article className="overflow-hidden rounded-3xl border border-skin-text/20 bg-skin-white p-6 shadow-card ring-1 ring-skin-text/5 backdrop-blur-xl">
+                    <p className="text-xs uppercase tracking-[0.2em] text-skin-gray">Analysis Complete</p>
+                    <p className="mt-2 rounded-2xl bg-skin-beige px-3 py-2 text-xs text-skin-gray">Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results</p>
+                    <div className="mt-4 flex items-center gap-4">
+                        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[linear-gradient(145deg,#E8CFC1_0%,#D8A7B1_100%)] text-2xl shadow-soft">
+                            <span role="img" aria-label="Face">🧴</span>
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-semibold text-skin-text">{result.skinType}</h1>
+                            <p className="mt-1 text-sm text-skin-gray">Confidence score: {result.confidence}%</p>
+                        </div>
+                    </div>
                     {result.lowLighting && (
-                        <p className="mt-3 rounded-xl border border-amber-400/45 bg-amber-700/25 px-3 py-2 text-xs text-amber-100">
+                        <p className="alert-warning mt-4 rounded-xl px-3 py-2 text-xs">
                             Low lighting detected. Results may improve with brighter, even light.
                         </p>
                     )}
                 </article>
 
-                <div className="grid grid-cols-2 gap-3">
-                    <ResultCard title="Oiliness" value={`${result.oiliness}%`} helper="Sebum estimate" />
-                    <ResultCard title="Hydration" value={`${result.hydration}%`} helper="Moisture index" />
-                    <ResultCard title="Acne Risk" value={getRiskLabel(result.acneRisk)} helper={`${result.acneRisk}% probability`} />
-                    <ResultCard title="Dark Spots" value={`${result.darkSpots}%`} helper="Pigmentation tendency" />
-                </div>
+                <motion.article
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.05 }}
+                    className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5"
+                >
+                    <h2 className="text-lg font-semibold text-skin-text">Skin Signals</h2>
+                    <div className="mt-4 space-y-4">
+                        {metricBars.map((metric, index) => (
+                            <div key={metric.label}>
+                                <div className="mb-1 flex items-center justify-between text-sm">
+                                    <p className="text-skin-gray">{metric.label}</p>
+                                    <p className="font-medium text-skin-text">{metric.value}%</p>
+                                </div>
+                                <div className="h-3 overflow-hidden rounded-full border border-skin-tone/80 bg-skin-beige">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${metric.value}%` }}
+                                        transition={{ duration: 0.65, delay: 0.1 + index * 0.12, ease: 'easeOut' }}
+                                        style={{ background: metric.gradient }}
+                                        className="h-full rounded-full"
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </motion.article>
 
-                <article className="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-5 backdrop-blur-lg">
-                    <h2 className="text-lg font-semibold text-cyan-50">How this was calculated</h2>
-                    <p className="mt-2 text-sm text-slate-300">
+                <ResultCard title="Dark Spots" value={`${result.darkSpots}%`} helper="Pigmentation tendency" />
+                <ResultCard title="Acne Risk Label" value={getRiskLabel(result.acneRisk)} helper={`${result.acneRisk}% probability`} />
+
+                <motion.article
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, delay: 0.12 }}
+                    className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
+                >
+                    <h2 className="text-lg font-semibold text-skin-text">How this was calculated</h2>
+                    <p className="mt-2 text-sm text-skin-gray">
                         This result comes from the face photo you captured and the stable frames from the burst.
                     </p>
-                    <ul className="mt-3 space-y-2 text-sm text-slate-300">
+                    <ul className="mt-3 space-y-2 text-sm text-skin-gray">
                         {howItWasCalculated.map((line) => (
-                            <li key={line} className="rounded-2xl border border-slate-700/60 bg-slate-800/35 px-3 py-2">
+                            <motion.li
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.3 }}
+                                key={line}
+                                className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2"
+                            >
                                 {line}
-                            </li>
+                            </motion.li>
                         ))}
                     </ul>
-                </article>
+                </motion.article>
 
-                <article className="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-5 backdrop-blur-lg">
-                    <h2 className="text-lg font-semibold text-cyan-50">Recommended Routine</h2>
-                    <div className="mt-3 grid gap-4 text-sm text-slate-200">
-                        <div>
-                            <h3 className="text-cyan-200">Morning</h3>
-                            <ul className="mt-1 space-y-1 text-slate-300">
+                <motion.article
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, delay: 0.2 }}
+                    className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
+                >
+                    <h2 className="text-lg font-semibold text-skin-text">Recommended Routine</h2>
+                    <div className="mt-3 grid gap-4 text-sm text-skin-text">
+                        <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige p-3">
+                            <h3 className="font-medium text-skin-text">Morning</h3>
+                            <ul className="mt-2 space-y-1 text-skin-gray">
                                 {routine.morningRoutine.map((step) => (
                                     <li key={step}>• {step}</li>
                                 ))}
                             </ul>
                         </div>
-                        <div>
-                            <h3 className="text-cyan-200">Night</h3>
-                            <ul className="mt-1 space-y-1 text-slate-300">
+                        <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige p-3">
+                            <h3 className="font-medium text-skin-text">Night</h3>
+                            <ul className="mt-2 space-y-1 text-skin-gray">
                                 {routine.nightRoutine.map((step) => (
                                     <li key={step}>• {step}</li>
                                 ))}
                             </ul>
                         </div>
                     </div>
-                </article>
+                </motion.article>
 
                 <div className="mt-1 grid grid-cols-3 gap-2">
                     <button
                         type="button"
                         onClick={onRetake}
-                        className="rounded-2xl border border-slate-600 bg-slate-900/40 px-3 py-3 text-sm font-medium text-slate-200"
+                        className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                     >
                         Retake Photo
                     </button>
                     <button
                         type="button"
                         onClick={onViewHistory}
-                        className="rounded-2xl border border-slate-600 bg-slate-900/40 px-3 py-3 text-sm font-medium text-slate-200"
+                        className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                     >
                         History
                     </button>
@@ -267,7 +326,7 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
                             void onShare()
                         }}
                         disabled={isSharing}
-                        className="rounded-2xl bg-cyan-400 px-3 py-3 text-sm font-semibold text-slate-950"
+                        className="rounded-2xl bg-[#c98f9d] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190] disabled:opacity-60"
                     >
                         {isSharing ? 'Sharing...' : 'Share Result'}
                     </button>

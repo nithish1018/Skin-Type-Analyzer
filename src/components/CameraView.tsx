@@ -137,15 +137,17 @@ export function CameraView({
             ? `Good shots ${Math.min(captureProgress, captureTarget)}/${captureTarget}`
             : (error ? error : (faceMessage ?? faceGuidance))
     const statusClassName = hasAlignedFace
-        ? 'border-emerald-400/45 bg-emerald-900/35 text-emerald-100'
+        ? 'border-skin-green/70 bg-skin-green/35 text-skin-text'
         : isDetectorLoading
-            ? 'border-cyan-400/45 bg-cyan-900/35 text-cyan-100'
+            ? 'border-skin-rose/60 bg-skin-rose/25 text-skin-text'
             : isCapturingFrames
-                ? 'border-amber-400/45 bg-amber-900/35 text-amber-100'
-                : 'border-slate-600/70 bg-slate-900/70 text-slate-100'
+                ? 'border-skin-tone/80 bg-skin-tone/35 text-skin-text'
+                : error
+                    ? 'alert-error'
+                    : 'border-skin-text/20 bg-skin-white text-skin-text'
 
     return (
-        <section className="relative flex h-[100svh] w-full flex-col overflow-hidden bg-black">
+        <section className="relative flex h-[100svh] w-full flex-col overflow-hidden bg-skin-beige text-skin-text">
             <div ref={stageRef} className="relative flex-1 overflow-hidden">
                 <video
                     ref={videoRef}
@@ -155,12 +157,12 @@ export function CameraView({
                     className={`absolute inset-0 h-full w-full object-cover ${cameraFacing === 'user' ? '-scale-x-100' : ''}`}
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/70" />
+                <div className="absolute inset-0 bg-gradient-to-b from-skin-text/20 via-transparent to-skin-text/30" />
 
                 {projectedOverlay && (
                     <div className={`pointer-events-none absolute inset-0`}>
                         <div
-                            className="absolute rounded-[1.8rem] border-2 border-cyan-200/90 shadow-[0_0_18px_rgba(34,211,238,0.55)]"
+                            className="absolute rounded-[1.8rem] border-2 border-skin-white/90 shadow-[0_0_18px_rgba(250,249,247,0.7)]"
                             style={{
                                 left: `${projectedOverlay.box.x}px`,
                                 top: `${projectedOverlay.box.y}px`,
@@ -171,7 +173,7 @@ export function CameraView({
                         {projectedOverlay.landmarks.map((point, index) => (
                             <span
                                 key={`landmark-${index}`}
-                                className="absolute h-2 w-2 rounded-full bg-cyan-100/90"
+                                className="absolute h-2 w-2 rounded-full bg-skin-white/90"
                                 style={{
                                     left: `${point.x}px`,
                                     top: `${point.y}px`,
@@ -182,37 +184,48 @@ export function CameraView({
                     </div>
                 )}
 
-                <div className="pointer-events-none absolute left-1/2 top-[43%] h-[min(58vw,13rem)] w-[min(58vw,13rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-200/70 shadow-[0_0_40px_rgba(103,232,249,0.3)]">
-                    <div className="absolute inset-4 rounded-full border border-cyan-100/50" />
+                <div
+                    className={`pointer-events-none absolute left-1/2 top-[43%] h-[min(58vw,13rem)] w-[min(58vw,13rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${hasAlignedFace ? 'animate-pulseRing border-skin-green/80 shadow-[0_0_45px_rgba(168,195,160,0.55)]' : 'border-skin-white/80 shadow-[0_0_38px_rgba(250,249,247,0.4)]'}`}
+                >
+                    <div className="absolute inset-4 rounded-full border border-skin-white/75" />
                 </div>
 
                 <header className="absolute left-0 top-0 flex w-full items-center justify-between gap-3 p-4">
-                    <div className="rounded-2xl border border-slate-600/60 bg-slate-900/55 px-4 py-2 text-sm text-slate-100 backdrop-blur-md">
+                    <div className="rounded-2xl border border-skin-text/25 bg-skin-white px-4 py-2 text-sm font-medium text-skin-text shadow-soft backdrop-blur-md">
                         {cameraFacing === 'user' ? 'Front Camera' : 'Back Camera'}
                     </div>
                     <button
                         type="button"
                         onClick={onSwitchCamera}
-                        className="rounded-2xl border border-cyan-300/35 bg-cyan-400/15 px-4 py-2 text-sm font-medium text-cyan-50 backdrop-blur-md"
+                        className="rounded-full border border-skin-text/20 bg-[#c98f9d] px-4 py-2 text-sm font-semibold text-white shadow-soft backdrop-blur-md"
                     >
-                        Switch Camera
+                        Switch
                     </button>
                 </header>
             </div>
 
-            <div className="border-t border-white/10 bg-slate-950/70 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl">
+            <div className="border-t border-skin-text/20 bg-skin-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-card backdrop-blur-xl">
                 <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-                    <p className={`rounded-xl border px-3 py-2 text-center text-sm font-medium backdrop-blur-md ${statusClassName}`}>
-                        {hasAlignedFace ? 'Face aligned' : statusText}
+                    <p className="text-center text-xs uppercase tracking-[0.16em] text-skin-gray">Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results</p>
+                    <p className={`rounded-xl border px-3 py-2 text-center text-sm font-semibold backdrop-blur-md ${statusClassName}`}>
+                        {hasAlignedFace ? 'Face position: Good' : statusText}
                     </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                        <p className="rounded-xl border border-skin-text/15 bg-skin-beige px-3 py-2 text-center font-medium text-skin-text">
+                            Lighting: {faceMessage?.toLowerCase().includes('light') ? 'Poor' : 'Good'}
+                        </p>
+                        <p className="rounded-xl border border-skin-text/15 bg-skin-beige px-3 py-2 text-center font-medium text-skin-text">
+                            Face Position: {hasAlignedFace ? 'Good' : 'Adjust'}
+                        </p>
+                    </div>
 
                     {videoDevices.length > 1 && (
-                        <label className="w-full rounded-xl border border-slate-600/70 bg-slate-900/70 px-3 py-2 text-xs text-slate-200 backdrop-blur-md">
+                        <label className="w-full rounded-xl border border-skin-text/20 bg-skin-white px-3 py-2 text-xs text-skin-gray backdrop-blur-md">
                             Camera Lens
                             <select
                                 value={selectedDeviceId}
                                 onChange={(event) => onSelectDevice(event.target.value)}
-                                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-slate-100"
+                                className="mt-1 w-full rounded-lg border border-skin-tone/60 bg-skin-white px-2 py-2 text-sm text-skin-text"
                             >
                                 {videoDevices.map((device, index) => (
                                     <option key={device.deviceId} value={device.deviceId}>
@@ -224,7 +237,7 @@ export function CameraView({
                     )}
 
                     {isIOSSafari && (error || !stream) && (
-                        <p className="rounded-xl border border-cyan-300/35 bg-cyan-900/35 px-3 py-2 text-center text-xs text-cyan-100">
+                        <p className="alert-warning rounded-xl px-3 py-2 text-center text-xs">
                             iOS Safari tip: if camera stays black, switch lens or tap Retry Access.
                         </p>
                     )}
@@ -233,23 +246,23 @@ export function CameraView({
                         <button
                             type="button"
                             onClick={onRetryPermission}
-                            className="rounded-xl border border-cyan-300/45 bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-50"
+                            className="rounded-xl border border-skin-text/30 bg-skin-beige px-4 py-2 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                         >
                             Retry Access
                         </button>
                     )}
 
                     {isStarting && (
-                        <p className="text-center text-sm text-cyan-100/80">Starting camera...</p>
+                        <p className="text-center text-sm text-skin-gray">Starting camera...</p>
                     )}
                     {isDetectorLoading && (
-                        <p className="text-center text-xs text-cyan-200/85">Initializing detector engine...</p>
+                        <p className="text-center text-xs text-skin-gray">Initializing detector engine...</p>
                     )}
                     {isCapturingFrames && (
-                        <p className="text-center text-xs text-amber-200/90">Capturing a short burst for a more reliable result.</p>
+                        <p className="text-center text-xs text-skin-gray">Capturing a short burst for a more reliable result.</p>
                     )}
                     {captureTarget > 0 && (
-                        <p className="text-center text-xs text-slate-300">
+                        <p className="text-center text-xs text-skin-gray">
                             Better shots captured: {Math.min(captureProgress, captureTarget)}/{captureTarget}
                         </p>
                     )}

@@ -11,27 +11,30 @@ interface PreviewProps {
 
 export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze, warning }: PreviewProps) {
     return (
-        <main className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,rgba(34,211,238,0.2),transparent_45%),linear-gradient(150deg,#020617_0%,#0b1220_55%,#081428_100%)] px-5 pb-10 pt-7 text-slate-100">
+        <main className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,rgba(232,207,193,0.65),transparent_45%),linear-gradient(150deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-10 pt-7 text-skin-text">
             <motion.section
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4 }}
                 className="mx-auto flex max-w-md flex-col gap-5"
             >
-                <div className="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-4 backdrop-blur-md">
-                    <h1 className="text-xl font-semibold text-cyan-100">Captured Preview</h1>
-                    <p className="mt-1 text-sm text-slate-300">Review the frame before skin analysis.</p>
-                    <p className="mt-2 text-xs text-slate-400">
+                <div className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-card ring-1 ring-skin-text/5 backdrop-blur-md">
+                    <h1 className="text-xl font-semibold text-skin-text">Captured Preview</h1>
+                    <p className="mt-1 text-sm text-skin-gray">Review the frame before skin analysis.</p>
+                    <p className="mt-2 text-xs text-skin-gray">
+                        Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results
+                    </p>
+                    <p className="mt-2 text-xs text-skin-gray">
                         Good shots captured: {Math.min(goodShots, targetShots)}/{targetShots}
                     </p>
                     {warning && (
-                        <p className="mt-3 rounded-xl border border-amber-400/45 bg-amber-700/20 px-3 py-2 text-xs text-amber-100">
+                        <p className="alert-warning mt-3 rounded-xl px-3 py-2 text-xs">
                             {warning}
                         </p>
                     )}
                 </div>
 
-                <div className="overflow-hidden rounded-3xl border border-cyan-200/25 bg-black shadow-[0_24px_45px_rgba(8,145,178,0.22)]">
+                <div className="overflow-hidden rounded-3xl border border-skin-text/20 bg-skin-white shadow-card ring-1 ring-skin-text/5">
                     <img src={imageSrc} alt="Captured face preview" className="h-[60vh] w-full object-cover" />
                 </div>
 
@@ -39,14 +42,14 @@ export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze,
                     <button
                         type="button"
                         onClick={onRetake}
-                        className="rounded-2xl border border-slate-600 bg-slate-900/45 px-4 py-3 text-sm font-medium text-slate-200"
+                        className="rounded-2xl border border-skin-text/30 bg-skin-beige px-4 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                     >
                         Retake
                     </button>
                     <button
                         type="button"
                         onClick={onAnalyze}
-                        className="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950"
+                        className="rounded-2xl bg-[#c98f9d] px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190]"
                     >
                         Analyze Skin
                     </button>

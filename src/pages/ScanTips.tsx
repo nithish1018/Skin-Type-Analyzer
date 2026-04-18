@@ -31,37 +31,40 @@ export function ScanTips({
     onToggleDontShowAgain,
 }: ScanTipsProps) {
     return (
-        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_15%_15%,rgba(34,211,238,0.16),transparent_45%),linear-gradient(160deg,#020617_0%,#0b1220_55%,#071428_100%)] px-5 pb-12 pt-8 text-slate-100">
+        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_15%_15%,rgba(232,207,193,0.6),transparent_45%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-12 pt-8 text-skin-text">
             <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35 }}
                 className="mx-auto flex max-w-md flex-col gap-4"
             >
-                <article className="rounded-3xl border border-cyan-300/20 bg-slate-900/50 p-5 backdrop-blur-lg">
-                    <p className="text-xs uppercase tracking-[0.18em] text-cyan-200/75">Before You Scan</p>
-                    <h1 className="mt-2 text-2xl font-semibold text-cyan-100">Tips for Better Accuracy</h1>
-                    <p className="mt-2 text-sm text-slate-300">
+                <article className="rounded-3xl border border-skin-tone/70 bg-skin-white/92 p-5 shadow-card backdrop-blur-lg">
+                    <p className="text-xs uppercase tracking-[0.18em] text-skin-gray">Before You Scan</p>
+                    <h1 className="mt-2 text-2xl font-semibold text-skin-text">Tips for Better Accuracy</h1>
+                    <p className="mt-2 text-sm text-skin-gray">
                         Follow these quick steps for a cleaner capture and better skin analysis reliability.
+                    </p>
+                    <p className="mt-3 rounded-2xl bg-skin-beige px-3 py-2 text-xs text-skin-gray">
+                        Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results
                     </p>
                 </article>
 
                 {tips.map((tip) => (
                     <article
                         key={tip.title}
-                        className="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-4 backdrop-blur-md"
+                        className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-card ring-1 ring-skin-text/5 backdrop-blur-md"
                     >
-                        <h2 className="text-base font-semibold text-cyan-100">{tip.title}</h2>
-                        <p className="mt-1 text-sm text-slate-300">{tip.description}</p>
+                        <h2 className="text-base font-semibold text-skin-text">{tip.title}</h2>
+                        <p className="mt-1 text-sm text-skin-gray">{tip.description}</p>
                     </article>
                 ))}
 
-                <label className="mt-1 flex items-center gap-3 rounded-2xl border border-slate-700/70 bg-slate-900/45 px-4 py-3 text-sm text-slate-200 backdrop-blur-md">
+                <label className="mt-1 flex items-center gap-3 rounded-2xl border border-skin-tone/65 bg-skin-white/90 px-4 py-3 text-sm text-skin-text backdrop-blur-md">
                     <input
                         type="checkbox"
                         checked={dontShowAgain}
                         onChange={(event) => onToggleDontShowAgain(event.target.checked)}
-                        className="h-4 w-4 rounded border-slate-500 bg-slate-800 text-cyan-400"
+                        className="h-4 w-4 rounded border-skin-tone bg-skin-white text-skin-rose"
                     />
                     <span>Don&apos;t show again</span>
                 </label>
@@ -70,7 +73,7 @@ export function ScanTips({
                     <button
                         type="button"
                         onClick={onContinue}
-                        className="w-full rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950"
+                        className="w-full rounded-2xl bg-[#c98f9d] px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190]"
                     >
                         Continue
                     </button>

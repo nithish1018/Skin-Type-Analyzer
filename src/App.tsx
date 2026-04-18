@@ -362,10 +362,10 @@ function App() {
 
   if (isDesktop) {
     return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 p-6 text-slate-100">
-        <section className="max-w-sm rounded-3xl border border-slate-700 bg-slate-900/70 p-6 text-center backdrop-blur-lg">
-          <h1 className="text-2xl font-semibold text-cyan-100">Skin Condition Analyzer</h1>
-          <p className="mt-3 text-sm text-slate-300">
+      <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_15%_12%,rgba(232,207,193,0.62),transparent_42%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] p-6 text-skin-text">
+        <section className="max-w-sm rounded-3xl border border-skin-text/20 bg-skin-white p-6 text-center shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
+          <h1 className="text-2xl font-semibold text-skin-text">Skin Analyzer</h1>
+          <p className="mt-3 text-sm text-skin-gray">
             Please open this app on your mobile device for the best experience
           </p>
         </section>
@@ -441,16 +441,23 @@ function App() {
 
   if (screen === 'analyzing') {
     return (
-      <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.24),transparent_40%),linear-gradient(150deg,#020617_0%,#0b1120_60%,#081528_100%)] p-6">
+      <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_20%_20%,rgba(232,207,193,0.6),transparent_42%),linear-gradient(150deg,#FAF9F7_0%,#F5EDE4_100%)] p-6">
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-xs rounded-3xl border border-cyan-200/30 bg-slate-900/50 p-6 text-center text-cyan-100 backdrop-blur-lg"
+          className="w-full max-w-xs rounded-3xl border border-skin-text/20 bg-skin-white p-6 text-center text-skin-text shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg"
         >
-          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-cyan-300/30 border-t-cyan-200" />
-          <h2 className="mt-4 text-xl font-semibold">Analyzing Skin Condition</h2>
-          <p className="mt-2 text-sm text-slate-300">
-            Estimating brightness, texture roughness, redness, and spot markers...
+          <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full border-2 border-[#c98f9d] bg-skin-beige shadow-soft">
+            <div className="absolute inset-0 animate-pulseRing rounded-full border-2 border-[#c98f9d]" />
+            <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_20%,rgba(216,167,177,0.35)_50%,transparent_80%)] bg-[length:220%_100%] animate-shimmer" />
+            <div className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-skin-text/35 border-t-transparent animate-spin" />
+          </div>
+          <h2 className="mt-4 text-xl font-semibold">Analyzing your skin...</h2>
+          <p className="mt-2 text-sm text-skin-gray">
+            Checking tone balance, texture smoothness, and hydration patterns.
+          </p>
+          <p className="mt-3 rounded-2xl bg-skin-beige px-3 py-2 text-xs text-skin-gray">
+            Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results
           </p>
         </motion.section>
       </main>

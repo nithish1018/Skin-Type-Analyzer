@@ -10,9 +10,9 @@ export function CaptureButton({ onClick, disabled = false }: CaptureButtonProps)
             aria-label="Capture photo"
             onClick={onClick}
             disabled={disabled}
-            className="mx-auto grid h-20 w-20 place-items-center rounded-full border-4 border-cyan-200/90 bg-cyan-300/20 backdrop-blur-sm transition hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+            className="mx-auto grid h-20 w-20 place-items-center rounded-full border-4 border-skin-white/95 bg-[linear-gradient(145deg,#E8CFC1_0%,#D8A7B1_100%)] shadow-card transition hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
-            <span className="h-12 w-12 rounded-full bg-cyan-100 shadow-[0_0_35px_rgba(103,232,249,0.55)]" />
+            <span className="h-12 w-12 animate-bounce rounded-full bg-skin-white shadow-soft [animation-duration:1.5s]" />
         </button>
     )
 }
