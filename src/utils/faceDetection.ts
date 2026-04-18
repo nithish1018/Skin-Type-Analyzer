@@ -12,6 +12,7 @@ declare global {
 
 let detectorPromise: Promise<MediaPipeFaceDetection> | null = null
 let detectionQueue: Promise<void> = Promise.resolve()
+let activeSelfieMode: boolean | null = null
 
 const clamp = (value: number, min: number, max: number): number => {
     return Math.min(max, Math.max(min, value))
@@ -40,6 +41,7 @@ const getFaceDetector = async (): Promise<MediaPipeFaceDetection> => {
                 locateFile: (file) => `${CDN_BASE}/${file}`,
             })
             detector.setOptions({
+                selfieMode: false,
                 model: 'short',
                 minDetectionConfidence: 0.62,
             })
@@ -49,6 +51,18 @@ const getFaceDetector = async (): Promise<MediaPipeFaceDetection> => {
     }
 
     return detectorPromise
+}
+
+const failedOutcome = (message: string): FaceDetectionOutcome => {
+    return {
+        status: 'no-face',
+        message,
+        guidance: 'Hold device steady',
+        clarity: 0,
+        faceBox: null,
+        landmarks: [],
+        faceCount: 0,
+    }
 }
 
 const guidanceFromFace = (
@@ -112,19 +126,35 @@ const runFaceDetection = async (image: InputImage, mirrorForFeedback: boolean): 
         }
     }
 
-    return new Promise<FaceDetectionOutcome>((resolve, reject) => {
-        detector.setOptions({
-            selfieMode: mirrorForFeedback,
-            model: 'short',
-            minDetectionConfidence: 0.62,
-        })
-        detector.reset()
+    return new Promise<FaceDetectionOutcome>((resolve) => {
+        if (activeSelfieMode !== mirrorForFeedback) {
+            detector.setOptions({
+                selfieMode: mirrorForFeedback,
+                model: 'short',
+                minDetectionConfidence: 0.62,
+            })
+            activeSelfieMode = mirrorForFeedback
+        }
+
+        let isSettled = false
+        const settle = (outcome: FaceDetectionOutcome) => {
+            if (isSettled) {
+                return
+            }
+            isSettled = true
+            window.clearTimeout(timeoutId)
+            resolve(outcome)
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            settle(failedOutcome('Face detection timed out. Please hold still and retry.'))
+        }, 1500)
 
         detector.onResults((results) => {
             const detections = results.detections ?? []
 
             if (detections.length === 0) {
-                resolve({
+                settle({
                     status: 'no-face',
                     message: 'No face detected. Please align your face properly.',
                     guidance: 'Align your face inside the circle',
@@ -137,7 +167,7 @@ const runFaceDetection = async (image: InputImage, mirrorForFeedback: boolean): 
             }
 
             if (detections.length > 1) {
-                resolve({
+                settle({
                     status: 'multiple-faces',
                     message: 'Multiple faces detected. Only one person allowed.',
                     guidance: 'Only one person allowed in frame',
@@ -153,7 +183,7 @@ const runFaceDetection = async (image: InputImage, mirrorForFeedback: boolean): 
             const areaRatio = (transformed.box.width * transformed.box.height) / Math.max(1, width * height)
             const clarity = clamp((areaRatio - 0.08) / 0.28, 0, 1)
 
-            resolve({
+            settle({
                 status: 'single-face',
                 message: null,
                 guidance: guidanceFromFace(transformed.box, width, height),
@@ -164,8 +194,8 @@ const runFaceDetection = async (image: InputImage, mirrorForFeedback: boolean): 
             })
         })
 
-        detector.send({ image }).catch((error) => {
-            reject(error)
+        detector.send({ image }).catch(() => {
+            settle(failedOutcome('Face detection temporarily unavailable. Please retry.'))
         })
     })
 }
@@ -179,6 +209,7 @@ export const detectFace = async (
     const detectionPromise = detectionQueue
         .catch(() => undefined)
         .then(() => runFaceDetection(image, mirrorForFeedback))
+        .catch(() => failedOutcome('Face detection unavailable. Please retry.'))
 
     detectionQueue = detectionPromise.then(() => undefined).catch(() => undefined)
     return detectionPromise
