@@ -8,6 +8,7 @@ interface CameraPageProps {
     stream: MediaStream | null
     cameraFacing: CameraFacing
     isStarting: boolean
+    isDetectorLoading: boolean
     error: string | null
     isIOSSafari: boolean
     videoDevices: MediaDeviceInfo[]

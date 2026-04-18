@@ -9,6 +9,7 @@ interface CameraViewProps {
     stream: MediaStream | null
     cameraFacing: CameraFacing
     isStarting: boolean
+    isDetectorLoading: boolean
     error: string | null
     isIOSSafari: boolean
     videoDevices: MediaDeviceInfo[]
@@ -29,6 +30,7 @@ export function CameraView({
     stream,
     cameraFacing,
     isStarting,
+    isDetectorLoading,
     error,
     isIOSSafari,
     videoDevices,
@@ -125,10 +127,14 @@ export function CameraView({
     })()
 
     const hasAlignedFace = faceGuidance === 'Face aligned' && !faceMessage && !error
-    const statusText = error ? error : (faceMessage ?? faceGuidance)
+    const statusText = isDetectorLoading
+        ? 'Face detection is loading... please wait'
+        : (error ? error : (faceMessage ?? faceGuidance))
     const statusClassName = hasAlignedFace
         ? 'border-emerald-400/45 bg-emerald-900/35 text-emerald-100'
-        : 'border-slate-600/70 bg-slate-900/70 text-slate-100'
+        : isDetectorLoading
+            ? 'border-cyan-400/45 bg-cyan-900/35 text-cyan-100'
+            : 'border-slate-600/70 bg-slate-900/70 text-slate-100'
 
     return (
         <section className="relative flex h-[100svh] w-full flex-col overflow-hidden bg-black">
@@ -227,6 +233,9 @@ export function CameraView({
 
                     {isStarting && (
                         <p className="text-center text-sm text-cyan-100/80">Starting camera...</p>
+                    )}
+                    {isDetectorLoading && (
+                        <p className="text-center text-xs text-cyan-200/85">Initializing detector engine...</p>
                     )}
                     <div className="flex justify-center pb-1 pt-2">
                         <CaptureButton onClick={onCapture} disabled={!stream || isStarting || Boolean(error) || !canCapture} />

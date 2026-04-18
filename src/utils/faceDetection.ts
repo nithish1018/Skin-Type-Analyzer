@@ -91,6 +91,10 @@ const getFaceDetector = async (): Promise<MediaPipeFaceDetection> => {
     return detectorPromise
 }
 
+export const initFaceDetection = async (): Promise<void> => {
+    await getFaceDetector()
+}
+
 const failedOutcome = (message: string): FaceDetectionOutcome => {
     return {
         status: 'no-face',

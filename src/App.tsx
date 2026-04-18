@@ -6,14 +6,16 @@ import { History } from './pages/History'
 import { Home } from './pages/Home'
 import { Preview } from './pages/Preview'
 import { Results } from './pages/Results'
+import { ScanTips } from './pages/ScanTips'
 import type { FaceDetectionOutcome } from './types/face'
 import type { ScanHistoryEntry, SkinAnalysisResult } from './types/skin'
 import { analyzeSkinWithContext, assessImageQuality, deriveExtendedMetrics } from './utils/analyzeSkin'
-import { cropFace, detectFace } from './utils/faceDetection'
+import { cropFace, detectFace, initFaceDetection } from './utils/faceDetection'
 
-type Screen = 'landing' | 'camera' | 'preview' | 'analyzing' | 'results' | 'history'
+type Screen = 'landing' | 'tips' | 'camera' | 'preview' | 'analyzing' | 'results' | 'history'
 
 const HISTORY_KEY = 'skin-condition-analyzer-history-v1'
+const SCAN_TIPS_PREF_KEY = 'skin-condition-analyzer-skip-tips-v1'
 
 const getInitialHistory = (): ScanHistoryEntry[] => {
   try {
@@ -24,14 +26,24 @@ const getInitialHistory = (): ScanHistoryEntry[] => {
   }
 }
 
+const getInitialSkipTipsPreference = (): boolean => {
+  try {
+    return window.localStorage.getItem(SCAN_TIPS_PREF_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
 function App() {
   const [screen, setScreen] = useState<Screen>('landing')
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [capturedImageData, setCapturedImageData] = useState<ImageData | null>(null)
   const [analysisResult, setAnalysisResult] = useState<SkinAnalysisResult | null>(null)
   const [history, setHistory] = useState<ScanHistoryEntry[]>(getInitialHistory)
+  const [skipTipsPreference, setSkipTipsPreference] = useState<boolean>(getInitialSkipTipsPreference)
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768)
   const [previewWarning, setPreviewWarning] = useState<string | null>(null)
+  const [isDetectorLoading, setIsDetectorLoading] = useState(false)
   const [faceDetection, setFaceDetection] = useState<FaceDetectionOutcome>({
     status: 'no-face',
     message: null,
@@ -58,6 +70,27 @@ function App() {
     retryPermission,
     selectDevice,
   } = useCamera('user')
+
+  useEffect(() => {
+    let isDisposed = false
+
+    const warmupDetector = async () => {
+      setIsDetectorLoading(true)
+      try {
+        await initFaceDetection()
+      } finally {
+        if (!isDisposed) {
+          setIsDetectorLoading(false)
+        }
+      }
+    }
+
+    void warmupDetector()
+
+    return () => {
+      isDisposed = true
+    }
+  }, [])
 
   useEffect(() => {
     if (screen !== 'camera' || !stream) {
@@ -108,10 +141,23 @@ function App() {
   }, [history])
 
   useEffect(() => {
+    window.localStorage.setItem(SCAN_TIPS_PREF_KEY, String(skipTipsPreference))
+  }, [skipTipsPreference])
+
+  useEffect(() => {
     const onResize = () => setIsDesktop(window.innerWidth > 768)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+
+  const openScanTips = () => {
+    if (skipTipsPreference) {
+      startScan()
+      return
+    }
+
+    setScreen('tips')
+  }
 
   const startScan = () => {
     setAnalysisResult(null)
@@ -129,6 +175,10 @@ function App() {
     })
     setScreen('camera')
     void startCamera()
+    setIsDetectorLoading(true)
+    void initFaceDetection().finally(() => {
+      setIsDetectorLoading(false)
+    })
   }
 
   const captureFrame = async () => {
@@ -232,9 +282,19 @@ function App() {
   if (screen === 'landing') {
     return (
       <Home
-        onStart={startScan}
+        onStart={openScanTips}
         historyCount={history.length}
         onViewHistory={() => setScreen('history')}
+      />
+    )
+  }
+
+  if (screen === 'tips') {
+    return (
+      <ScanTips
+        onContinue={startScan}
+        dontShowAgain={skipTipsPreference}
+        onToggleDontShowAgain={setSkipTipsPreference}
       />
     )
   }
@@ -246,6 +306,7 @@ function App() {
         stream={stream}
         cameraFacing={cameraFacing}
         isStarting={isStarting}
+        isDetectorLoading={isDetectorLoading}
         error={error}
         isIOSSafari={isIOSSafari}
         videoDevices={videoDevices}
