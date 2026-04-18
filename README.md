@@ -1,73 +1,110 @@
-# React + TypeScript + Vite
+# Skin Condition Analyzer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mobile-first web application that uses camera capture, face detection, and lightweight on-device heuristics to estimate skin condition signals.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Skin Condition Analyzer guides users through a camera-based scan flow and shows:
+- Estimated skin type
+- Oiliness
+- Hydration
+- Acne risk
+- Dark spots
+- Confidence score
 
-## React Compiler
+The app is built for quick, practical guidance and trend tracking, not medical diagnosis.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Core Features
 
-## Expanding the ESLint configuration
+- Mobile-first capture experience
+- Front/back camera support
+- Real-time face detection and alignment feedback
+- Burst capture flow with good-shot counting
+- Preview screen with captured shot summary
+- Heuristic skin analysis pipeline
+- Plain-language explanation of how results were derived
+- Recommended routine by skin type
+- Result sharing with app URL included
+- Local scan history persistence
+- PWA support (manifest + service worker)
+- Offline-friendly static asset behavior
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## How It Works
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. User opens scan flow and views optional tips.
+2. Camera screen checks for a single face in frame.
+3. Burst capture collects multiple valid face shots.
+4. Best/stable frames are used for analysis.
+5. Result page displays metrics and a simple explanation section.
+6. Scan result is saved in local history.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion
+- MediaPipe Face Detection (`@mediapipe/face_detection`)
+
+## Project Structure
+
+- `src/App.tsx`: app flow and screen state management
+- `src/pages/`: screen-level UI (`Home`, `Camera`, `Preview`, `Results`, `History`, `ScanTips`)
+- `src/components/`: reusable UI components
+- `src/hooks/useCamera.ts`: camera stream and device handling
+- `src/utils/faceDetection.ts`: MediaPipe face detection and face crop logic
+- `src/utils/analyzeSkin.ts`: skin signal extraction and scoring pipeline
+- `public/sw.js`: service worker logic
+- `public/manifest.webmanifest`: PWA manifest
+- `public/mediapipe/`: local MediaPipe runtime/model assets
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+
+### Install
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Run in Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+## Scripts
+
+- `npm run dev`: start development server
+- `npm run build`: type-check and create production build
+- `npm run lint`: run ESLint
+- `npm run preview`: preview production build locally
+
+## Deployment Notes
+
+- Camera access requires HTTPS (or localhost in development).
+- Service worker and PWA assets are included in `public/`.
+- MediaPipe assets are served locally from `public/mediapipe` for better deployment reliability.
+
+## Limitations
+
+- This app does not provide medical diagnosis.
+- Results can vary based on lighting, camera quality, motion blur, and framing.
+- Product recommendations are generic routines and should be user-validated.
