@@ -26,8 +26,6 @@ The app is built for quick, practical guidance and trend tracking, not medical d
 - Recommended routine by skin type
 - Result sharing with app URL included
 - Local scan history persistence
-- PWA support (manifest + service worker)
-- Offline-friendly static asset behavior
 
 ## How It Works
 
@@ -55,8 +53,6 @@ The app is built for quick, practical guidance and trend tracking, not medical d
 - `src/hooks/useCamera.ts`: camera stream and device handling
 - `src/utils/faceDetection.ts`: MediaPipe face detection and face crop logic
 - `src/utils/analyzeSkin.ts`: skin signal extraction and scoring pipeline
-- `public/sw.js`: service worker logic
-- `public/manifest.webmanifest`: PWA manifest
 - `public/mediapipe/`: local MediaPipe runtime/model assets
 
 ## Getting Started
@@ -100,7 +96,6 @@ npm run preview
 ## Deployment Notes
 
 - Camera access requires HTTPS (or localhost in development).
-- Service worker and PWA assets are included in `public/`.
 - MediaPipe assets are served locally from `public/mediapipe` for better deployment reliability.
 
 ## Limitations
