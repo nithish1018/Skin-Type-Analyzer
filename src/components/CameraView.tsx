@@ -10,6 +10,9 @@ interface CameraViewProps {
     cameraFacing: CameraFacing
     isStarting: boolean
     isDetectorLoading: boolean
+    isCapturingFrames: boolean
+    captureProgress: number
+    captureTarget: number
     error: string | null
     isIOSSafari: boolean
     videoDevices: MediaDeviceInfo[]
@@ -18,7 +21,6 @@ interface CameraViewProps {
     faceGuidance: string
     faceBox: FaceBox | null
     landmarks: FaceLandmarkPoint[]
-    canCapture: boolean
     onSwitchCamera: () => void
     onCapture: () => void
     onRetryPermission: () => void
@@ -31,6 +33,9 @@ export function CameraView({
     cameraFacing,
     isStarting,
     isDetectorLoading,
+    isCapturingFrames,
+    captureProgress,
+    captureTarget,
     error,
     isIOSSafari,
     videoDevices,
@@ -39,7 +44,6 @@ export function CameraView({
     faceGuidance,
     faceBox,
     landmarks,
-    canCapture,
     onSwitchCamera,
     onCapture,
     onRetryPermission,
@@ -129,12 +133,16 @@ export function CameraView({
     const hasAlignedFace = faceGuidance === 'Face aligned' && !faceMessage && !error
     const statusText = isDetectorLoading
         ? 'Face detection is loading... please wait'
-        : (error ? error : (faceMessage ?? faceGuidance))
+        : isCapturingFrames
+            ? `Good shots ${Math.min(captureProgress, captureTarget)}/${captureTarget}`
+            : (error ? error : (faceMessage ?? faceGuidance))
     const statusClassName = hasAlignedFace
         ? 'border-emerald-400/45 bg-emerald-900/35 text-emerald-100'
         : isDetectorLoading
             ? 'border-cyan-400/45 bg-cyan-900/35 text-cyan-100'
-            : 'border-slate-600/70 bg-slate-900/70 text-slate-100'
+            : isCapturingFrames
+                ? 'border-amber-400/45 bg-amber-900/35 text-amber-100'
+                : 'border-slate-600/70 bg-slate-900/70 text-slate-100'
 
     return (
         <section className="relative flex h-[100svh] w-full flex-col overflow-hidden bg-black">
@@ -237,8 +245,16 @@ export function CameraView({
                     {isDetectorLoading && (
                         <p className="text-center text-xs text-cyan-200/85">Initializing detector engine...</p>
                     )}
+                    {isCapturingFrames && (
+                        <p className="text-center text-xs text-amber-200/90">Capturing a short burst for a more reliable result.</p>
+                    )}
+                    {captureTarget > 0 && (
+                        <p className="text-center text-xs text-slate-300">
+                            Better shots captured: {Math.min(captureProgress, captureTarget)}/{captureTarget}
+                        </p>
+                    )}
                     <div className="flex justify-center pb-1 pt-2">
-                        <CaptureButton onClick={onCapture} disabled={!stream || isStarting || Boolean(error) || !canCapture} />
+                        <CaptureButton onClick={onCapture} disabled={!stream || isStarting || Boolean(error) || isCapturingFrames} />
                     </div>
                 </div>
             </div>

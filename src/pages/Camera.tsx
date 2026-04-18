@@ -9,6 +9,9 @@ interface CameraPageProps {
     cameraFacing: CameraFacing
     isStarting: boolean
     isDetectorLoading: boolean
+    isCapturingFrames: boolean
+    captureProgress: number
+    captureTarget: number
     error: string | null
     isIOSSafari: boolean
     videoDevices: MediaDeviceInfo[]
@@ -17,7 +20,6 @@ interface CameraPageProps {
     faceGuidance: string
     faceBox: FaceBox | null
     landmarks: FaceLandmarkPoint[]
-    canCapture: boolean
     onSwitchCamera: () => void
     onCapture: () => void
     onRetryPermission: () => void

@@ -2,12 +2,14 @@ import { motion } from 'framer-motion'
 
 interface PreviewProps {
     imageSrc: string
+    goodShots: number
+    targetShots: number
     onRetake: () => void
     onAnalyze: () => void
     warning: string | null
 }
 
-export function Preview({ imageSrc, onRetake, onAnalyze, warning }: PreviewProps) {
+export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze, warning }: PreviewProps) {
     return (
         <main className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,rgba(34,211,238,0.2),transparent_45%),linear-gradient(150deg,#020617_0%,#0b1220_55%,#081428_100%)] px-5 pb-10 pt-7 text-slate-100">
             <motion.section
@@ -19,6 +21,9 @@ export function Preview({ imageSrc, onRetake, onAnalyze, warning }: PreviewProps
                 <div className="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-4 backdrop-blur-md">
                     <h1 className="text-xl font-semibold text-cyan-100">Captured Preview</h1>
                     <p className="mt-1 text-sm text-slate-300">Review the frame before skin analysis.</p>
+                    <p className="mt-2 text-xs text-slate-400">
+                        Good shots captured: {Math.min(goodShots, targetShots)}/{targetShots}
+                    </p>
                     {warning && (
                         <p className="mt-3 rounded-xl border border-amber-400/45 bg-amber-700/20 px-3 py-2 text-xs text-amber-100">
                             {warning}

@@ -31,4 +31,9 @@ export interface AnalysisQuality {
     lightingQuality: number
     imageSharpness: number
     averageBrightness: number
+    usablePixelRatio: number
+    skinCoverage: number
+    stabilityScore: number
+    pass: boolean
+    reason: string | null
 }

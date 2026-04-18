@@ -9,13 +9,29 @@ import { Results } from './pages/Results'
 import { ScanTips } from './pages/ScanTips'
 import type { FaceDetectionOutcome } from './types/face'
 import type { ScanHistoryEntry, SkinAnalysisResult } from './types/skin'
-import { analyzeSkinWithContext, assessImageQuality, deriveExtendedMetrics } from './utils/analyzeSkin'
+import { analyzeSkinFrames, assessImageQuality } from './utils/analyzeSkin.ts'
 import { cropFace, detectFace, initFaceDetection } from './utils/faceDetection'
 
 type Screen = 'landing' | 'tips' | 'camera' | 'preview' | 'analyzing' | 'results' | 'history'
 
 const HISTORY_KEY = 'skin-condition-analyzer-history-v1'
 const SCAN_TIPS_PREF_KEY = 'skin-condition-analyzer-skip-tips-v1'
+const CAPTURE_TARGET_FRAMES = 3
+const CAPTURE_MAX_ATTEMPTS = 5
+
+interface CapturedFrame {
+  imageData: ImageData
+  faceBox: { x: number; y: number; width: number; height: number } | null
+  landmarks: Array<{ x: number; y: number }>
+  faceDetectionClarity?: number
+  previewUrl: string
+}
+
+const wait = (milliseconds: number): Promise<void> => {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds)
+  })
+}
 
 const getInitialHistory = (): ScanHistoryEntry[] => {
   try {
@@ -37,13 +53,15 @@ const getInitialSkipTipsPreference = (): boolean => {
 function App() {
   const [screen, setScreen] = useState<Screen>('landing')
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
-  const [capturedImageData, setCapturedImageData] = useState<ImageData | null>(null)
+  const [capturedFrames, setCapturedFrames] = useState<CapturedFrame[]>([])
   const [analysisResult, setAnalysisResult] = useState<SkinAnalysisResult | null>(null)
   const [history, setHistory] = useState<ScanHistoryEntry[]>(getInitialHistory)
   const [skipTipsPreference, setSkipTipsPreference] = useState<boolean>(getInitialSkipTipsPreference)
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768)
   const [previewWarning, setPreviewWarning] = useState<string | null>(null)
   const [isDetectorLoading, setIsDetectorLoading] = useState(false)
+  const [isCapturingFrames, setIsCapturingFrames] = useState(false)
+  const [captureProgress, setCaptureProgress] = useState(0)
   const [faceDetection, setFaceDetection] = useState<FaceDetectionOutcome>({
     status: 'no-face',
     message: null,
@@ -162,8 +180,10 @@ function App() {
   const startScan = () => {
     setAnalysisResult(null)
     setCapturedImage(null)
-    setCapturedImageData(null)
+    setCapturedFrames([])
     setPreviewWarning(null)
+    setIsCapturingFrames(false)
+    setCaptureProgress(0)
     setFaceDetection({
       status: 'no-face',
       message: null,
@@ -182,65 +202,137 @@ function App() {
   }
 
   const captureFrame = async () => {
+    if (isCapturingFrames) {
+      return
+    }
+
     const video = videoRef.current
     if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
       return
     }
 
-    const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) {
-      return
-    }
-
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-    const faceOutcome = await detectFace(canvas, { mirrorForFeedback: cameraFacing === 'user' })
-
-    if (faceOutcome.status !== 'single-face' || !faceOutcome.faceBox) {
-      setFaceDetection(faceOutcome)
-      return
-    }
-
-    const croppedFace = cropFace(canvas, faceOutcome.faceBox)
-
-    setCapturedImage(canvas.toDataURL('image/jpeg', 0.92))
-    setCapturedImageData(croppedFace.imageData)
+    setIsCapturingFrames(true)
+    setCaptureProgress(0)
     setPreviewWarning(null)
 
-    stopCamera()
-    setScreen('preview')
+    const samples: CapturedFrame[] = []
+    let bestPreviewUrl: string | null = null
+    let bestPreviewScore = 0
+    let fallbackFrame: CapturedFrame | null = null
+    let latestFailure: FaceDetectionOutcome = faceDetection
+    let lastQualityWarning: string | null = null
+
+    try {
+      for (let attempt = 0; attempt < CAPTURE_MAX_ATTEMPTS && samples.length < CAPTURE_TARGET_FRAMES; attempt += 1) {
+        if (attempt > 0) {
+          await wait(120)
+        }
+
+        const activeVideo = videoRef.current
+        if (!activeVideo || activeVideo.videoWidth === 0 || activeVideo.videoHeight === 0) {
+          break
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = activeVideo.videoWidth
+        canvas.height = activeVideo.videoHeight
+
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          break
+        }
+
+        ctx.drawImage(activeVideo, 0, 0, canvas.width, canvas.height)
+
+        const faceOutcome = await detectFace(canvas, { mirrorForFeedback: cameraFacing === 'user' })
+        latestFailure = faceOutcome
+        setFaceDetection(faceOutcome)
+
+        if (faceOutcome.status !== 'single-face' || !faceOutcome.faceBox) {
+          continue
+        }
+
+        const croppedFace = cropFace(canvas, faceOutcome.faceBox)
+        const quality = assessImageQuality(croppedFace.imageData, {
+          faceBox: faceOutcome.faceBox,
+          landmarks: faceOutcome.landmarks,
+        })
+
+        const previewUrl = canvas.toDataURL('image/jpeg', 0.92)
+        const frame: CapturedFrame = {
+          imageData: croppedFace.imageData,
+          faceBox: faceOutcome.faceBox,
+          landmarks: faceOutcome.landmarks,
+          faceDetectionClarity: faceOutcome.clarity,
+          previewUrl,
+        }
+
+        const previewScore = quality.lightingQuality * 0.35 + quality.imageSharpness * 0.25 + quality.skinCoverage * 0.25 + faceOutcome.clarity * 0.15
+        samples.push(frame)
+        setCaptureProgress(samples.length)
+
+        if (!bestPreviewUrl || previewScore > bestPreviewScore) {
+          bestPreviewScore = previewScore
+          bestPreviewUrl = previewUrl
+        }
+
+        if (!quality.pass) {
+          latestFailure = {
+            ...faceOutcome,
+            message: quality.reason ?? faceOutcome.message ?? 'Frame quality is low, but continuing with the best available frame.',
+            guidance: 'Hold still and improve the light',
+          }
+          lastQualityWarning = quality.reason ?? lastQualityWarning
+          if (!fallbackFrame) {
+            fallbackFrame = frame
+          }
+        } else if (!fallbackFrame) {
+          fallbackFrame = frame
+          bestPreviewUrl = previewUrl
+        }
+      }
+
+      if (samples.length === 0) {
+        if (fallbackFrame) {
+          samples.push(fallbackFrame)
+          setCaptureProgress(samples.length)
+          setPreviewWarning('Using the best available frame. Results may improve with steadier lighting.')
+        } else {
+          setPreviewWarning('Could not capture a stable frame. Please hold still and try again in brighter light.')
+          if (latestFailure.message) {
+            setFaceDetection(latestFailure)
+          }
+          return
+        }
+      } else if (lastQualityWarning) {
+        setPreviewWarning(`Using a slightly lower-quality burst. ${lastQualityWarning}`)
+      }
+
+      setCapturedImage(bestPreviewUrl ?? samples[Math.floor(samples.length / 2)]?.previewUrl ?? samples[0].previewUrl)
+      setCapturedFrames(samples)
+      stopCamera()
+      setScreen('preview')
+    } finally {
+      setIsCapturingFrames(false)
+      setCaptureProgress(0)
+    }
   }
 
   const runAnalysis = async () => {
-    if (!capturedImageData) {
-      return
-    }
-
-    const quality = assessImageQuality(capturedImageData)
-    if (quality.averageBrightness < 0.3) {
-      setPreviewWarning('Lighting is too low. Please move to a brighter area.')
+    if (capturedFrames.length === 0) {
       return
     }
 
     setScreen('analyzing')
 
     window.setTimeout(async () => {
-      const baseResult = analyzeSkinWithContext(capturedImageData, {
-        faceDetectionClarity: faceDetection.clarity,
-        lightingQuality: quality.lightingQuality,
-        imageSharpness: quality.imageSharpness,
-      })
-      const extended = deriveExtendedMetrics(capturedImageData, baseResult)
-      setAnalysisResult(extended)
+      const result = analyzeSkinFrames(capturedFrames)
+      setAnalysisResult(result)
 
       const historyEntry: ScanHistoryEntry = {
         id: window.crypto?.randomUUID?.() ?? String(Date.now()),
         createdAt: new Date().toISOString(),
-        result: extended,
+        result,
       }
       setHistory((prev) => [historyEntry, ...prev].slice(0, 20))
 
@@ -250,9 +342,11 @@ function App() {
 
   const retake = () => {
     setCapturedImage(null)
-    setCapturedImageData(null)
+    setCapturedFrames([])
     setAnalysisResult(null)
     setPreviewWarning(null)
+    setIsCapturingFrames(false)
+    setCaptureProgress(0)
     setFaceDetection({
       status: 'no-face',
       message: null,
@@ -307,6 +401,9 @@ function App() {
         cameraFacing={cameraFacing}
         isStarting={isStarting}
         isDetectorLoading={isDetectorLoading}
+        isCapturingFrames={isCapturingFrames}
+        captureProgress={captureProgress}
+        captureTarget={CAPTURE_TARGET_FRAMES}
         error={error}
         isIOSSafari={isIOSSafari}
         videoDevices={videoDevices}
@@ -315,7 +412,6 @@ function App() {
         faceGuidance={faceDetection.guidance}
         faceBox={faceDetection.faceBox}
         landmarks={faceDetection.landmarks}
-        canCapture={faceDetection.status === 'single-face'}
         onSwitchCamera={() => {
           void switchCamera()
         }}
@@ -331,9 +427,16 @@ function App() {
   }
 
   if (screen === 'preview' && capturedImage) {
-    return <Preview imageSrc={capturedImage} onRetake={retake} onAnalyze={() => {
-      void runAnalysis()
-    }} warning={previewWarning} />
+    return <Preview
+      imageSrc={capturedImage}
+      goodShots={capturedFrames.length}
+      targetShots={CAPTURE_TARGET_FRAMES}
+      onRetake={retake}
+      onAnalyze={() => {
+        void runAnalysis()
+      }}
+      warning={previewWarning}
+    />
   }
 
   if (screen === 'analyzing') {

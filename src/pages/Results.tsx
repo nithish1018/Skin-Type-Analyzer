@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { ResultCard } from '../components/ResultCard'
 import type { SkinAnalysisResult, SkinRecommendation, SkinType } from '../types/skin'
 
@@ -109,22 +110,78 @@ const getRiskLabel = (value: number): string => {
     return 'Low'
 }
 
+const getHowItWasCalculated = (result: SkinAnalysisResult): string[] => {
+    const oilinessLine = result.oiliness >= result.hydration
+        ? 'The skin looked shinier than dry, so the app leaned more toward an oily or combination type.'
+        : 'The skin looked drier than shiny, so the app leaned more toward a dry or combination type.'
+
+    const acneLine = result.acneRisk >= 70
+        ? 'More redness and texture were detected, so acne risk was marked higher.'
+        : result.acneRisk >= 45
+            ? 'Some redness and texture were detected, so acne risk was marked medium.'
+            : 'Only a small amount of redness and texture was detected, so acne risk was marked lower.'
+
+    const darkSpotLine = result.darkSpots >= 50
+        ? 'Darker patches stood out more, so the dark spot score is higher.'
+        : 'Only a few darker patches stood out, so the dark spot score is lower.'
+
+    const confidenceLine = result.lowLighting
+        ? 'The photo was a bit dim, so the confidence score is lower than usual.'
+        : 'The photo was clear enough, so the confidence score is more dependable.'
+
+    return [
+        'The app looks at the captured face area and compares how shiny, dry, even, and clear the skin appears.',
+        oilinessLine,
+        acneLine,
+        darkSpotLine,
+        confidenceLine,
+    ]
+}
+
 export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
     const routine = recommendations[result.skinType]
+    const howItWasCalculated = getHowItWasCalculated(result)
+    const appUrl = window.location.origin + window.location.pathname
+    const [isSharing, setIsSharing] = useState(false)
 
     const onShare = async () => {
-        const shareText = `Skin Type: ${result.skinType}\nConfidence: ${result.confidence}%\nOiliness: ${result.oiliness}%\nHydration: ${result.hydration}%\nAcne Risk: ${result.acneRisk}%`
-
-        if (navigator.share) {
-            await navigator.share({
-                title: 'My Skin Analysis Result',
-                text: shareText,
-            })
+        if (isSharing) {
             return
         }
 
-        await navigator.clipboard.writeText(shareText)
-        window.alert('Result copied to clipboard')
+        const baseShareText = `Skin Type: ${result.skinType}\nConfidence: ${result.confidence}%\nOiliness: ${result.oiliness}%\nHydration: ${result.hydration}%\nAcne Risk: ${result.acneRisk}%`
+        const clipboardShareText = `${baseShareText}\nApp: ${appUrl}`
+
+        setIsSharing(true)
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'My Skin Analysis Result',
+                    text: baseShareText,
+                    url: appUrl,
+                })
+                return
+            }
+
+            await navigator.clipboard.writeText(clipboardShareText)
+            window.alert('Result copied to clipboard')
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : ''
+
+            if (navigator.clipboard) {
+                try {
+                    await navigator.clipboard.writeText(clipboardShareText)
+                    window.alert(reason ? `Share unavailable. Result copied instead. (${reason})` : 'Share unavailable. Result copied instead.')
+                    return
+                } catch {
+                    // fall through to the alert below
+                }
+            }
+
+            window.alert(reason ? `Unable to share right now. (${reason})` : 'Unable to share right now.')
+        } finally {
+            setIsSharing(false)
+        }
     }
 
     return (
@@ -154,6 +211,20 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
                 </div>
 
                 <article className="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-5 backdrop-blur-lg">
+                    <h2 className="text-lg font-semibold text-cyan-50">How this was calculated</h2>
+                    <p className="mt-2 text-sm text-slate-300">
+                        This result comes from the face photo you captured and the stable frames from the burst.
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm text-slate-300">
+                        {howItWasCalculated.map((line) => (
+                            <li key={line} className="rounded-2xl border border-slate-700/60 bg-slate-800/35 px-3 py-2">
+                                {line}
+                            </li>
+                        ))}
+                    </ul>
+                </article>
+
+                <article className="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-5 backdrop-blur-lg">
                     <h2 className="text-lg font-semibold text-cyan-50">Recommended Routine</h2>
                     <div className="mt-3 grid gap-4 text-sm text-slate-200">
                         <div>
@@ -172,26 +243,6 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
                                 ))}
                             </ul>
                         </div>
-                    </div>
-                </article>
-
-                <article className="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-5 backdrop-blur-lg">
-                    <h2 className="text-lg font-semibold text-cyan-50">Tips & Product Ideas</h2>
-                    <ul className="mt-3 space-y-2 text-sm text-slate-300">
-                        {routine.tips.map((tip) => (
-                            <li key={tip}>• {tip}</li>
-                        ))}
-                    </ul>
-                    <div className="mt-4 space-y-2">
-                        {routine.products.map((product) => (
-                            <div
-                                key={product.name}
-                                className="rounded-2xl border border-slate-700/70 bg-slate-800/50 px-3 py-2"
-                            >
-                                <p className="text-sm text-slate-100">{product.name}</p>
-                                <p className="text-xs text-slate-400">{product.category}</p>
-                            </div>
-                        ))}
                     </div>
                 </article>
 
@@ -215,9 +266,10 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
                         onClick={() => {
                             void onShare()
                         }}
+                        disabled={isSharing}
                         className="rounded-2xl bg-cyan-400 px-3 py-3 text-sm font-semibold text-slate-950"
                     >
-                        Share Result
+                        {isSharing ? 'Sharing...' : 'Share Result'}
                     </button>
                 </div>
             </motion.section>
