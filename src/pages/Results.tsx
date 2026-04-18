@@ -4,6 +4,7 @@ import { ResultCard } from '../components/ResultCard'
 import type { SkinAnalysisResult, SkinRecommendation, SkinType } from '../types/skin'
 
 interface ResultsProps {
+    imageSrc: string | null
     result: SkinAnalysisResult
     onRetake: () => void
     onViewHistory: () => void
@@ -116,6 +117,74 @@ interface MetricBar {
     gradient: string
 }
 
+type PdfJsDoc = {
+    internal: {
+        pageSize: {
+            getWidth: () => number
+            getHeight: () => number
+        }
+        getNumberOfPages: () => number
+    }
+    setFillColor: (r: number, g: number, b: number) => PdfJsDoc
+    setTextColor: (r: number, g: number, b: number) => PdfJsDoc
+    setDrawColor: (r: number, g: number, b: number) => PdfJsDoc
+    setLineWidth: (width: number) => PdfJsDoc
+    setFont: (fontName: string, fontStyle?: string) => PdfJsDoc
+    setFontSize: (size: number) => PdfJsDoc
+    roundedRect: (x: number, y: number, width: number, height: number, rx: number, ry: number, style?: 'F' | 'S' | 'FD' | 'DF' | null) => PdfJsDoc
+    rect: (x: number, y: number, width: number, height: number, style: 'F' | 'S' | 'FD' | 'DF') => PdfJsDoc
+    text: (text: string | string[], x: number, y: number, options?: { maxWidth?: number; align?: 'left' | 'center' | 'right' }) => PdfJsDoc
+    addImage: (imageData: string, format: string, x: number, y: number, width: number, height: number) => PdfJsDoc
+    addPage: () => PdfJsDoc
+    getTextWidth: (text: string) => number
+    splitTextToSize: (text: string, size: number) => string[]
+    save: (fileName: string) => void
+}
+
+const downloadReportFileName = 'skin-condition-report.pdf'
+
+const createRoundedImageDataUrl = async (source: string, width: number, height: number, radius: number): Promise<string> => {
+    const image = new Image()
+    image.decoding = 'async'
+    image.src = source
+
+    await image.decode()
+
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+
+    const context = canvas.getContext('2d')
+    if (!context) {
+        throw new Error('Canvas context unavailable')
+    }
+
+    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight)
+    const drawWidth = image.naturalWidth * scale
+    const drawHeight = image.naturalHeight * scale
+    const offsetX = (width - drawWidth) / 2
+    const offsetY = (height - drawHeight) / 2
+
+    context.clearRect(0, 0, width, height)
+    context.save()
+    context.beginPath()
+    context.moveTo(radius, 0)
+    context.lineTo(width - radius, 0)
+    context.quadraticCurveTo(width, 0, width, radius)
+    context.lineTo(width, height - radius)
+    context.quadraticCurveTo(width, height, width - radius, height)
+    context.lineTo(radius, height)
+    context.quadraticCurveTo(0, height, 0, height - radius)
+    context.lineTo(0, radius)
+    context.quadraticCurveTo(0, 0, radius, 0)
+    context.closePath()
+    context.clip()
+    context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight)
+    context.restore()
+
+    return canvas.toDataURL('image/png')
+}
+
 const getHowItWasCalculated = (result: SkinAnalysisResult): string[] => {
     const oilinessLine = result.oiliness >= result.hydration
         ? 'The skin looked shinier than dry, so the app leaned more toward an oily or combination type.'
@@ -144,16 +213,246 @@ const getHowItWasCalculated = (result: SkinAnalysisResult): string[] => {
     ]
 }
 
-export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
+export function Results({ imageSrc, result, onRetake, onViewHistory }: ResultsProps) {
     const routine = recommendations[result.skinType]
     const howItWasCalculated = getHowItWasCalculated(result)
     const appUrl = window.location.origin + window.location.pathname
     const [isSharing, setIsSharing] = useState(false)
+    const [isDownloading, setIsDownloading] = useState(false)
     const metricBars: MetricBar[] = [
         { label: 'Oiliness', value: result.oiliness, gradient: 'linear-gradient(90deg,#D8A7B1 0%,#E8CFC1 100%)' },
         { label: 'Hydration', value: result.hydration, gradient: 'linear-gradient(90deg,#A8C3A0 0%,#DCE8D8 100%)' },
         { label: 'Acne Risk', value: result.acneRisk, gradient: 'linear-gradient(90deg,#D8A7B1 0%,#F1D8DF 100%)' },
     ]
+
+    const reportWarnings = [
+        result.lowLighting ? 'Low lighting was detected. The result is still useful, but a brighter, even light can improve accuracy.' : 'Lighting looked stable during capture, which supports a more dependable result.',
+        'Blurry photos can reduce confidence. Retake with steady hands, the phone at eye level, and a clear focus lock.',
+    ]
+
+    const downloadReport = async () => {
+        if (isDownloading) {
+            return
+        }
+
+        setIsDownloading(true)
+        try {
+            const { jsPDF } = await import('jspdf')
+            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' }) as unknown as PdfJsDoc
+            const pageWidth = pdf.internal.pageSize.getWidth()
+            const pageHeight = pdf.internal.pageSize.getHeight()
+            const margin = 14
+            const contentWidth = pageWidth - margin * 2
+            const accent = { r: 201, g: 143, b: 157 }
+            const accentSoft = { r: 232, g: 207, b: 193 }
+            const accentGreen = { r: 168, g: 195, b: 160 }
+            const text = { r: 63, g: 48, b: 41 }
+            const gray = { r: 111, g: 99, b: 92 }
+            const beige = { r: 248, g: 242, b: 236 }
+
+            const drawSectionTitle = (title: string, y: number): number => {
+                pdf.setFont('helvetica', 'bold')
+                pdf.setFontSize(13)
+                pdf.setTextColor(text.r, text.g, text.b)
+                pdf.text(title, margin, y)
+                return y + 6
+            }
+
+            const drawBadge = (label: string, value: string, x: number, y: number, width: number, fill: { r: number; g: number; b: number }) => {
+                pdf.setFillColor(fill.r, fill.g, fill.b)
+                pdf.setDrawColor(fill.r, fill.g, fill.b)
+                pdf.roundedRect(x, y, width, 18, 4, 4, 'F')
+                pdf.setFont('helvetica', 'normal')
+                pdf.setFontSize(8)
+                pdf.setTextColor(gray.r, gray.g, gray.b)
+                pdf.text(label.toUpperCase(), x + 4, y + 6)
+                pdf.setFont('helvetica', 'bold')
+                pdf.setFontSize(10)
+                pdf.setTextColor(text.r, text.g, text.b)
+                pdf.text(value, x + 4, y + 13)
+            }
+
+            pdf.setFillColor(250, 249, 247)
+            pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+
+            pdf.setFillColor(beige.r, beige.g, beige.b)
+            pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
+            pdf.roundedRect(margin, 12, contentWidth, 26, 6, 6, 'F')
+            pdf.setFont('helvetica', 'bold')
+            pdf.setFontSize(16)
+            pdf.setTextColor(text.r, text.g, text.b)
+            pdf.text('Skin Condition Analyzer Report', margin + 4, 22)
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(8)
+            pdf.setTextColor(gray.r, gray.g, gray.b)
+            const generatedAt = new Date().toLocaleString()
+            const generatedLabel = `Generated: ${generatedAt}`
+            pdf.text('Generated from the captured photo and on-device skin analysis', margin + 4, 30)
+            pdf.text(generatedLabel, margin + 4, 35)
+
+            const imageTop = 45
+            const imageBoxWidth = 84
+            const imageBoxHeight = 96
+            pdf.setFillColor(255, 255, 255)
+            pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
+            pdf.roundedRect(margin, imageTop, imageBoxWidth, imageBoxHeight, 5, 5, 'F')
+            pdf.setFillColor(244, 236, 229)
+            pdf.roundedRect(margin + 4, imageTop + 4, imageBoxWidth - 8, imageBoxHeight - 8, 4, 4, 'F')
+
+            const imageWidth = imageBoxWidth - 8
+            const imageHeight = imageBoxHeight - 8
+            if (imageSrc) {
+                try {
+                    const roundedImage = await createRoundedImageDataUrl(imageSrc, Math.round(imageWidth * 6), Math.round(imageHeight * 6), 36)
+                    pdf.addImage(roundedImage, 'PNG', margin + 4, imageTop + 4, imageWidth, imageHeight)
+                } catch (error) {
+                    const reason = error instanceof Error ? error.message : 'unknown image error'
+                    pdf.setFont('helvetica', 'bold')
+                    pdf.setFontSize(9)
+                    pdf.setTextColor(gray.r, gray.g, gray.b)
+                    pdf.text(`Image could not be embedded (${reason})`, margin + 8, imageTop + 50, { maxWidth: imageWidth - 4 })
+                }
+            } else {
+                pdf.setFont('helvetica', 'bold')
+                pdf.setFontSize(11)
+                pdf.setTextColor(gray.r, gray.g, gray.b)
+                pdf.text('No image available', margin + 24, imageTop + 50)
+            }
+
+            const summaryX = margin + imageBoxWidth + 8
+            const summaryWidth = contentWidth - imageBoxWidth - 8
+            pdf.setFillColor(255, 255, 255)
+            pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
+            pdf.roundedRect(summaryX, imageTop, summaryWidth, imageBoxHeight, 5, 5, 'F')
+
+            pdf.setFont('helvetica', 'bold')
+            pdf.setFontSize(14)
+            pdf.setTextColor(text.r, text.g, text.b)
+            pdf.text(result.skinType, summaryX + 5, imageTop + 12)
+
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(9)
+            pdf.setTextColor(gray.r, gray.g, gray.b)
+            pdf.text(`Confidence score: ${result.confidence}%`, summaryX + 5, imageTop + 20)
+
+            drawBadge('Oiliness', `${result.oiliness}%`, summaryX + 5, imageTop + 30, summaryWidth - 10, beige)
+            drawBadge('Hydration', `${result.hydration}%`, summaryX + 5, imageTop + 50, summaryWidth - 10, accentGreen)
+            drawBadge('Acne Risk', `${result.acneRisk}%`, summaryX + 5, imageTop + 70, summaryWidth - 10, { r: 247, g: 231, b: 236 })
+
+            let cursorY = 145
+            cursorY = drawSectionTitle('Capture Quality Notes', cursorY)
+            pdf.setFillColor(255, 255, 255)
+            pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
+            pdf.roundedRect(margin, cursorY, contentWidth, 28, 5, 5, 'F')
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(9)
+            pdf.setTextColor(text.r, text.g, text.b)
+            reportWarnings.forEach((line, index) => {
+                pdf.text(`- ${line}`, margin + 5, cursorY + 8 + index * 7, { maxWidth: contentWidth - 10 })
+            })
+
+            cursorY += 38
+            cursorY = drawSectionTitle('Recommended Tips', cursorY)
+            pdf.setFillColor(255, 255, 255)
+            pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
+            pdf.roundedRect(margin, cursorY, contentWidth, 44, 5, 5, 'F')
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(9)
+            pdf.setTextColor(text.r, text.g, text.b)
+            routine.tips.forEach((tip, index) => {
+                pdf.text(`- ${tip}`, margin + 5, cursorY + 8 + index * 7, { maxWidth: contentWidth - 10 })
+            })
+
+            cursorY += 54
+            const calculatedTitleHeight = 6
+            const calculatedIntro = 'The app looks at the captured face area and compares how shiny, dry, even, and clear the skin appears.'
+            const calculatedLines = [calculatedIntro, ...howItWasCalculated.slice(1)]
+            const calculatedCardText = calculatedLines.flatMap((line, index) => {
+                const prefix = index === 0 ? '- ' : '- '
+                return pdf.splitTextToSize(`${prefix}${line}`, contentWidth - 10)
+            })
+            const calculatedCardHeight = calculatedCardText.length * 6 + calculatedTitleHeight + 10
+            if (cursorY + calculatedCardHeight + 64 > pageHeight - 18) {
+                pdf.addPage()
+                pdf.setFillColor(250, 249, 247)
+                pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+                cursorY = 20
+            }
+            cursorY = drawSectionTitle('How this was calculated', cursorY)
+            pdf.setFillColor(255, 255, 255)
+            pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
+            pdf.roundedRect(margin, cursorY, contentWidth, calculatedCardHeight, 5, 5, 'F')
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(9)
+            pdf.setTextColor(text.r, text.g, text.b)
+            let calculationLineY = cursorY + 8
+            calculatedCardText.forEach((line) => {
+                pdf.text(line, margin + 5, calculationLineY, { maxWidth: contentWidth - 10 })
+                calculationLineY += 6
+            })
+
+            cursorY += calculatedCardHeight + 10
+            if (cursorY + 62 > pageHeight - 18) {
+                pdf.addPage()
+                pdf.setFillColor(250, 249, 247)
+                pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+                cursorY = 20
+            }
+            cursorY = drawSectionTitle('Suggested Routine', cursorY)
+            const routineCardWidth = (contentWidth - 5) / 2
+            pdf.setFillColor(255, 255, 255)
+            pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
+            pdf.roundedRect(margin, cursorY, routineCardWidth, 42, 5, 5, 'F')
+            pdf.roundedRect(margin + routineCardWidth + 5, cursorY, routineCardWidth, 42, 5, 5, 'F')
+
+            pdf.setFont('helvetica', 'bold')
+            pdf.setFontSize(10)
+            pdf.setTextColor(text.r, text.g, text.b)
+            pdf.text('Morning', margin + 5, cursorY + 8)
+            pdf.text('Night', margin + routineCardWidth + 10, cursorY + 8)
+
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(8)
+            pdf.setTextColor(gray.r, gray.g, gray.b)
+            routine.morningRoutine.slice(0, 3).forEach((step, index) => {
+                pdf.text(`- ${step}`, margin + 5, cursorY + 14 + index * 6, { maxWidth: routineCardWidth - 8 })
+            })
+            routine.nightRoutine.slice(0, 3).forEach((step, index) => {
+                pdf.text(`- ${step}`, margin + routineCardWidth + 10, cursorY + 14 + index * 6, { maxWidth: routineCardWidth - 8 })
+            })
+
+            const warningY = cursorY + 52
+            pdf.setFillColor(252, 243, 221)
+            pdf.setDrawColor(230, 184, 90)
+            pdf.roundedRect(margin, warningY, contentWidth, 22, 4, 4, 'F')
+            pdf.setFont('helvetica', 'bold')
+            pdf.setFontSize(10)
+            pdf.setTextColor(122, 78, 12)
+            pdf.text('Important: Treat this as guidance, not a clinical diagnosis.', margin + 5, warningY + 8)
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(9)
+            pdf.setTextColor(122, 78, 12)
+            pdf.text('Great for trends and routine planning. For medical concerns, consult a dermatologist.', margin + 5, warningY + 15, { maxWidth: contentWidth - 10 })
+
+            const footerY = warningY + 28
+            pdf.setFillColor(accent.r, accent.g, accent.b)
+            pdf.roundedRect(margin, footerY, contentWidth, 12, 4, 4, 'F')
+            pdf.setFont('helvetica', 'bold')
+            pdf.setFontSize(8)
+            pdf.setTextColor(255, 255, 255)
+            pdf.text('Source of information', margin + 5, footerY + 4)
+            pdf.setFont('helvetica', 'normal')
+            pdf.text(appUrl, margin + 5, footerY + 9, { maxWidth: contentWidth - 10 })
+
+            pdf.save(downloadReportFileName)
+        } catch (error) {
+            console.error('PDF report generation failed', error)
+            const reason = error instanceof Error ? error.message : 'Unknown error'
+            window.alert(`Unable to generate the PDF report right now. ${reason}`)
+        } finally {
+            setIsDownloading(false)
+        }
+    }
 
     const onShare = async () => {
         if (isSharing) {
@@ -279,6 +578,18 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
                 </motion.article>
 
                 <motion.article
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.16 }}
+                    className="rounded-3xl border border-[#e6b85a]/70 bg-[linear-gradient(145deg,#fcf3dd_0%,#fff7e8_100%)] p-4 shadow-soft ring-1 ring-[#e6b85a]/35"
+                >
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a4e0c]">Friendly Reality Check</p>
+                    <p className="mt-2 text-sm font-medium text-[#7a4e0c]">
+                        Useful for trends, not a final diagnosis. Treat this as smart guidance and confirm medical concerns with a dermatologist.
+                    </p>
+                </motion.article>
+
+                <motion.article
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.45, delay: 0.2 }}
@@ -305,7 +616,7 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
                     </div>
                 </motion.article>
 
-                <div className="mt-1 grid grid-cols-3 gap-2">
+                <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <button
                         type="button"
                         onClick={onRetake}
@@ -329,6 +640,16 @@ export function Results({ result, onRetake, onViewHistory }: ResultsProps) {
                         className="rounded-2xl bg-[#c98f9d] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190] disabled:opacity-60"
                     >
                         {isSharing ? 'Sharing...' : 'Share Result'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            void downloadReport()
+                        }}
+                        disabled={isDownloading}
+                        className="rounded-2xl bg-[#A8C3A0] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#95af8d] disabled:opacity-60"
+                    >
+                        {isDownloading ? 'Creating...' : 'Download Report'}
                     </button>
                 </div>
             </motion.section>

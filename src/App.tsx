@@ -467,6 +467,7 @@ function App() {
   if (screen === 'results' && analysisResult) {
     return (
       <Results
+        imageSrc={capturedImage}
         result={analysisResult}
         onRetake={retake}
         onViewHistory={() => setScreen('history')}
