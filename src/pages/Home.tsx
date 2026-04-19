@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { AdSlot } from '../components/AdSlot'
 
 interface HomeProps {
     onStart: () => void
@@ -7,6 +8,8 @@ interface HomeProps {
 }
 
 export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
+    const homeAdSlot = import.meta.env.VITE_ADSENSE_SLOT_HOME as string | undefined
+
     return (
         <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(232,207,193,0.75),transparent_45%),radial-gradient(circle_at_80%_25%,rgba(216,167,177,0.3),transparent_35%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-6 pb-32 pt-8 text-skin-text">
             <div className="absolute -left-10 top-20 h-56 w-56 animate-floatBlob rounded-full bg-skin-tone/55 blur-3xl" />
@@ -41,6 +44,8 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
                         <p className="mt-1 text-xs text-skin-gray">Photo signals + profile answers for stronger results</p>
                     </article>
                 </div>
+
+                <AdSlot slot={homeAdSlot ?? ''} minHeightClassName="min-h-[90px]" />
 
                 <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
                     <p className="text-sm font-medium text-skin-text">What you will get</p>

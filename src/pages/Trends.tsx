@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { AdSlot } from '../components/AdSlot'
 import type { ScanHistoryEntry } from '../types/skin'
 import { buildWindowTrendSnapshot } from '../utils/trends'
 
@@ -9,6 +10,7 @@ interface TrendsProps {
 }
 
 export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
+    const trendsAdSlot = import.meta.env.VITE_ADSENSE_SLOT_TRENDS as string | undefined
     const trendSnapshots = [buildWindowTrendSnapshot(history, 7), buildWindowTrendSnapshot(history, 30)].filter(
         (snapshot): snapshot is NonNullable<typeof snapshot> => snapshot !== null,
     )
@@ -24,6 +26,8 @@ export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
                     <h1 className="text-2xl font-semibold text-skin-text">Trends</h1>
                     <p className="mt-1 text-sm text-skin-gray">Compare hydration, oiliness, and acne risk across recent scans.</p>
                 </article>
+
+                <AdSlot slot={trendsAdSlot ?? ''} minHeightClassName="min-h-[90px]" />
 
                 {history.length === 0 && (
                     <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 text-sm text-skin-gray shadow-soft ring-1 ring-skin-text/5 backdrop-blur-lg">

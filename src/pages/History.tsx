@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { AdSlot } from '../components/AdSlot'
 import type { ScanHistoryEntry } from '../types/skin'
 
 interface HistoryProps {
@@ -19,6 +20,8 @@ const formatDate = (value: string): string => {
 }
 
 export function History({ history, onBack, onClear, onDeleteEntry, onViewTrends }: HistoryProps) {
+    const historyAdSlot = import.meta.env.VITE_ADSENSE_SLOT_HISTORY as string | undefined
+
     return (
         <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_12%_8%,rgba(232,207,193,0.65),transparent_40%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-32 pt-8 text-skin-text">
             <motion.section
@@ -38,6 +41,8 @@ export function History({ history, onBack, onClear, onDeleteEntry, onViewTrends 
                 >
                     View Trend Snapshot
                 </button>
+
+                <AdSlot slot={historyAdSlot ?? ''} minHeightClassName="min-h-[90px]" />
 
                 {history.length === 0 && (
                     <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 text-sm text-skin-gray shadow-soft ring-1 ring-skin-text/5 backdrop-blur-lg">
