@@ -33,12 +33,12 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
 
                 <div className="grid grid-cols-2 gap-3">
                     <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                        <p className="text-sm font-medium text-skin-text">Lighting Check</p>
-                        <p className="mt-1 text-xs text-skin-gray">Balanced light improves accuracy</p>
+                        <p className="text-sm font-medium text-skin-text">Smart Question Boost</p>
+                        <p className="mt-1 text-xs text-skin-gray">Quick skin questions improve result reliability</p>
                     </article>
                     <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                        <p className="text-sm font-medium text-skin-text">Face Position</p>
-                        <p className="mt-1 text-xs text-skin-gray">Center your face in the guide</p>
+                        <p className="text-sm font-medium text-skin-text">Weighted Final Analysis</p>
+                        <p className="mt-1 text-xs text-skin-gray">Photo signals + profile answers for stronger results</p>
                     </article>
                 </div>
 
@@ -49,6 +49,13 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
                         <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Hydration</div>
                         <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Acne Risk</div>
                     </div>
+                </article>
+
+                <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-skin-gray">Privacy Notice</p>
+                    <p className="mt-2 text-sm leading-relaxed text-skin-gray">
+                        Your photos are processed locally on your device for analysis only. This system does not store your images or use them for model training.
+                    </p>
                 </article>
 
                 <button
@@ -70,3 +77,5 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
         </main>
     )
 }
+
+export default Home

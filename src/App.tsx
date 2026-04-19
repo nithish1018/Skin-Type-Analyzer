@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useCamera } from './hooks/useCamera'
 import { CameraPage } from './pages/Camera'
 import { History } from './pages/History'
-import { Home } from './pages/Home'
+import Home from './pages/Home'
 import { Preview } from './pages/Preview'
 import { Results } from './pages/Results'
 import { ScanTips } from './pages/ScanTips'
@@ -462,10 +462,33 @@ function App() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-xs rounded-3xl border border-skin-text/20 bg-skin-white p-6 text-center text-skin-text shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg"
         >
-          <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full border-2 border-[#c98f9d] bg-skin-beige shadow-soft">
-            <div className="absolute inset-0 animate-pulseRing rounded-full border-2 border-[#c98f9d]" />
-            <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_20%,rgba(216,167,177,0.35)_50%,transparent_80%)] bg-[length:220%_100%] animate-shimmer" />
-            <div className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-skin-text/35 border-t-transparent animate-spin" />
+          <div className="relative mx-auto h-24 w-24">
+            <motion.div
+              className="absolute inset-0 rounded-[2rem] border border-[#c98f9d]/35 bg-[radial-gradient(circle_at_30%_20%,rgba(201,143,157,0.35),transparent_62%),linear-gradient(150deg,rgba(255,255,255,0.8),rgba(245,237,228,0.92))] shadow-soft"
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+            />
+            <motion.div
+              className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-[1.4rem] border border-[#c98f9d]/55 bg-skin-white/85"
+              animate={{ scale: [0.94, 1.03, 0.94], opacity: [0.9, 1, 0.9] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <motion.div
+                className="absolute left-2 right-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[linear-gradient(90deg,rgba(201,143,157,0.15)_0%,rgba(201,143,157,0.7)_50%,rgba(201,143,157,0.15)_100%)]"
+                animate={{ x: ['-12%', '12%', '-12%'] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </motion.div>
+            <div className="absolute bottom-0 left-1/2 flex -translate-x-1/2 items-end gap-1.5">
+              {[0, 1, 2].map((drop) => (
+                <motion.div
+                  key={drop}
+                  className="h-2 w-2 rounded-full bg-[#c98f9d]/85"
+                  animate={{ y: [0, -5, 0], opacity: [0.4, 1, 0.4], scale: [0.9, 1.1, 0.9] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: drop * 0.2, ease: 'easeInOut' }}
+                />
+              ))}
+            </div>
           </div>
           <h2 className="mt-4 text-xl font-semibold">Analyzing your skin...</h2>
           <p className="mt-2 text-sm text-skin-gray">
@@ -495,6 +518,9 @@ function App() {
       <History
         history={history}
         onBack={() => setScreen('landing')}
+        onDeleteEntry={(entryId) => {
+          setHistory((prev) => prev.filter((entry) => entry.id !== entryId))
+        }}
         onClear={() => {
           setHistory([])
           window.localStorage.removeItem(HISTORY_KEY)

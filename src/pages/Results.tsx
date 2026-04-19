@@ -583,23 +583,30 @@ export function Results({ imageSrc, result, onBackHome, onViewHistory }: Results
                         <p className="mt-1 text-sm text-skin-gray">
                             Final result combines photo signals with your skin profile answers.
                         </p>
-                        <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                        <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
                             <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                <p className="text-skin-gray">Image Weight</p>
+                                <p className="text-[11px] leading-tight text-skin-gray">Image Weight</p>
                                 <p className="mt-1 text-sm font-semibold text-skin-text">{imageWeightPercent}%</p>
                             </div>
                             <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                <p className="text-skin-gray">Questionnaire Weight</p>
+                                <p className="text-[11px] leading-tight text-skin-gray">Questionnaire Weight</p>
                                 <p className="mt-1 text-sm font-semibold text-skin-text">{questionnaireWeightPercent}%</p>
                             </div>
                             <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                <p className="text-skin-gray">Dehydration Tendency</p>
+                                <p className="text-[11px] leading-tight text-skin-gray">Dehydration Tendency</p>
                                 <p className="mt-1 text-sm font-semibold text-skin-text">{dehydrationTendencyPercent}%</p>
                             </div>
                         </div>
-                        <p className="mt-3 text-xs text-skin-gray">
-                            Image-only type: <span className="font-semibold text-skin-text">{result.weighting.imageOnlySkinType}</span> | Questionnaire type: <span className="font-semibold text-skin-text">{result.weighting.questionnaireSkinType}</span>
-                        </p>
+                        <div className="mt-3 space-y-1 text-xs text-skin-gray">
+                            <p>
+                                Image-only type:{' '}
+                                <span className="font-semibold text-skin-text">{result.weighting.imageOnlySkinType}</span>
+                            </p>
+                            <p>
+                                Questionnaire type:{' '}
+                                <span className="font-semibold text-skin-text">{result.weighting.questionnaireSkinType}</span>
+                            </p>
+                        </div>
                     </motion.article>
                 )}
 
