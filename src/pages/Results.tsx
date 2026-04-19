@@ -6,7 +6,7 @@ import type { SkinAnalysisResult, SkinRecommendation, SkinType } from '../types/
 interface ResultsProps {
     imageSrc: string | null
     result: SkinAnalysisResult
-    onRetake: () => void
+    onBackHome: () => void
     onViewHistory: () => void
 }
 
@@ -213,7 +213,7 @@ const getHowItWasCalculated = (result: SkinAnalysisResult): string[] => {
     ]
 }
 
-export function Results({ imageSrc, result, onRetake, onViewHistory }: ResultsProps) {
+export function Results({ imageSrc, result, onBackHome, onViewHistory }: ResultsProps) {
     const routine = recommendations[result.skinType]
     const howItWasCalculated = getHowItWasCalculated(result)
     const appUrl = window.location.origin + window.location.pathname
@@ -229,6 +229,9 @@ export function Results({ imageSrc, result, onRetake, onViewHistory }: ResultsPr
         result.lowLighting ? 'Low lighting was detected. The result is still useful, but a brighter, even light can improve accuracy.' : 'Lighting looked stable during capture, which supports a more dependable result.',
         'Blurry photos can reduce confidence. Retake with steady hands, the phone at eye level, and a clear focus lock.',
     ]
+    const imageWeightPercent = result.weighting ? Math.round(result.weighting.imageWeight * 100) : null
+    const questionnaireWeightPercent = result.weighting ? Math.round(result.weighting.questionnaireWeight * 100) : null
+    const dehydrationTendencyPercent = result.weighting ? result.weighting.dehydrationTendency : null
 
     const downloadReport = async () => {
         if (isDownloading) {
@@ -335,9 +338,29 @@ export function Results({ imageSrc, result, onRetake, onViewHistory }: ResultsPr
             pdf.setTextColor(gray.r, gray.g, gray.b)
             pdf.text(`Confidence score: ${result.confidence}%`, summaryX + 5, imageTop + 20)
 
-            drawBadge('Oiliness', `${result.oiliness}%`, summaryX + 5, imageTop + 30, summaryWidth - 10, beige)
-            drawBadge('Hydration', `${result.hydration}%`, summaryX + 5, imageTop + 50, summaryWidth - 10, accentGreen)
-            drawBadge('Acne Risk', `${result.acneRisk}%`, summaryX + 5, imageTop + 70, summaryWidth - 10, { r: 247, g: 231, b: 236 })
+            if (result.weighting) {
+                pdf.setFont('helvetica', 'bold')
+                pdf.setFontSize(8)
+                pdf.setTextColor(text.r, text.g, text.b)
+                pdf.text(
+                    `Weighted blend: Image ${Math.round(result.weighting.imageWeight * 100)}% + Questionnaire ${Math.round(result.weighting.questionnaireWeight * 100)}%`,
+                    summaryX + 5,
+                    imageTop + 26,
+                    { maxWidth: summaryWidth - 10 },
+                )
+                pdf.setFont('helvetica', 'normal')
+                pdf.text(
+                    `Dehydration tendency (questionnaire): ${result.weighting.dehydrationTendency}%`,
+                    summaryX + 5,
+                    imageTop + 30,
+                    { maxWidth: summaryWidth - 10 },
+                )
+            }
+
+            const badgeStartY = result.weighting ? imageTop + 38 : imageTop + 30
+            drawBadge('Oiliness', `${result.oiliness}%`, summaryX + 5, badgeStartY, summaryWidth - 10, beige)
+            drawBadge('Hydration', `${result.hydration}%`, summaryX + 5, badgeStartY + 20, summaryWidth - 10, accentGreen)
+            drawBadge('Acne Risk', `${result.acneRisk}%`, summaryX + 5, badgeStartY + 40, summaryWidth - 10, { r: 247, g: 231, b: 236 })
 
             let cursorY = 145
             cursorY = drawSectionTitle('Capture Quality Notes', cursorY)
@@ -549,6 +572,37 @@ export function Results({ imageSrc, result, onRetake, onViewHistory }: ResultsPr
                     </div>
                 </motion.article>
 
+                {result.weighting && (
+                    <motion.article
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.09 }}
+                        className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
+                    >
+                        <h2 className="text-lg font-semibold text-skin-text">Weighted Result Blend</h2>
+                        <p className="mt-1 text-sm text-skin-gray">
+                            Final result combines photo signals with your skin profile answers.
+                        </p>
+                        <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                            <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
+                                <p className="text-skin-gray">Image Weight</p>
+                                <p className="mt-1 text-sm font-semibold text-skin-text">{imageWeightPercent}%</p>
+                            </div>
+                            <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
+                                <p className="text-skin-gray">Questionnaire Weight</p>
+                                <p className="mt-1 text-sm font-semibold text-skin-text">{questionnaireWeightPercent}%</p>
+                            </div>
+                            <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
+                                <p className="text-skin-gray">Dehydration Tendency</p>
+                                <p className="mt-1 text-sm font-semibold text-skin-text">{dehydrationTendencyPercent}%</p>
+                            </div>
+                        </div>
+                        <p className="mt-3 text-xs text-skin-gray">
+                            Image-only type: <span className="font-semibold text-skin-text">{result.weighting.imageOnlySkinType}</span> | Questionnaire type: <span className="font-semibold text-skin-text">{result.weighting.questionnaireSkinType}</span>
+                        </p>
+                    </motion.article>
+                )}
+
                 <ResultCard title="Dark Spots" value={`${result.darkSpots}%`} helper="Pigmentation tendency" />
                 <ResultCard title="Acne Risk Label" value={getRiskLabel(result.acneRisk)} helper={`${result.acneRisk}% probability`} />
 
@@ -619,10 +673,10 @@ export function Results({ imageSrc, result, onRetake, onViewHistory }: ResultsPr
                 <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <button
                         type="button"
-                        onClick={onRetake}
+                        onClick={onBackHome}
                         className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                     >
-                        Retake Photo
+                        Back to Home
                     </button>
                     <button
                         type="button"

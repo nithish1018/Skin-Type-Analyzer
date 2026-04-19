@@ -7,12 +7,14 @@ import { Home } from './pages/Home'
 import { Preview } from './pages/Preview'
 import { Results } from './pages/Results'
 import { ScanTips } from './pages/ScanTips'
+import { SkinQuestions } from './pages/SkinQuestions'
 import type { FaceDetectionOutcome } from './types/face'
-import type { ScanHistoryEntry, SkinAnalysisResult } from './types/skin'
+import type { ScanHistoryEntry, SkinAnalysisResult, SkinQuestionAnswers } from './types/skin'
 import { analyzeSkinFrames, assessImageQuality } from './utils/analyzeSkin.ts'
 import { cropFace, detectFace, initFaceDetection } from './utils/faceDetection'
+import { evaluateQuestionnaire, mergeWeightedSkinResult } from './utils/questionnaire'
 
-type Screen = 'landing' | 'tips' | 'camera' | 'preview' | 'analyzing' | 'results' | 'history'
+type Screen = 'landing' | 'tips' | 'camera' | 'preview' | 'questions' | 'analyzing' | 'results' | 'history'
 
 const HISTORY_KEY = 'skin-condition-analyzer-history-v1'
 const SCAN_TIPS_PREF_KEY = 'skin-condition-analyzer-skip-tips-v1'
@@ -318,7 +320,7 @@ function App() {
     }
   }
 
-  const runAnalysis = async () => {
+  const runAnalysis = async (answers: SkinQuestionAnswers) => {
     if (capturedFrames.length === 0) {
       return
     }
@@ -326,7 +328,9 @@ function App() {
     setScreen('analyzing')
 
     window.setTimeout(async () => {
-      const result = analyzeSkinFrames(capturedFrames)
+      const imageResult = analyzeSkinFrames(capturedFrames)
+      const questionnaireResult = evaluateQuestionnaire(answers)
+      const result = mergeWeightedSkinResult(imageResult, questionnaireResult)
       setAnalysisResult(result)
 
       const historyEntry: ScanHistoryEntry = {
@@ -433,10 +437,21 @@ function App() {
       targetShots={CAPTURE_TARGET_FRAMES}
       onRetake={retake}
       onAnalyze={() => {
-        void runAnalysis()
+        setScreen('questions')
       }}
       warning={previewWarning}
     />
+  }
+
+  if (screen === 'questions') {
+    return (
+      <SkinQuestions
+        onBack={() => setScreen('preview')}
+        onComplete={(answers) => {
+          void runAnalysis(answers)
+        }}
+      />
+    )
   }
 
   if (screen === 'analyzing') {
@@ -469,7 +484,7 @@ function App() {
       <Results
         imageSrc={capturedImage}
         result={analysisResult}
-        onRetake={retake}
+        onBackHome={() => setScreen('landing')}
         onViewHistory={() => setScreen('history')}
       />
     )
