@@ -6,6 +6,7 @@ interface HistoryProps {
     onBack: () => void
     onClear: () => void
     onDeleteEntry: (entryId: string) => void
+    onViewTrends: () => void
 }
 
 const formatDate = (value: string): string => {
@@ -17,9 +18,9 @@ const formatDate = (value: string): string => {
     })
 }
 
-export function History({ history, onBack, onClear, onDeleteEntry }: HistoryProps) {
+export function History({ history, onBack, onClear, onDeleteEntry, onViewTrends }: HistoryProps) {
     return (
-        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_12%_8%,rgba(232,207,193,0.65),transparent_40%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-16 pt-8 text-skin-text">
+        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_12%_8%,rgba(232,207,193,0.65),transparent_40%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-32 pt-8 text-skin-text">
             <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -29,6 +30,14 @@ export function History({ history, onBack, onClear, onDeleteEntry }: HistoryProp
                     <h1 className="text-2xl font-semibold text-skin-text">Scan History</h1>
                     <p className="mt-1 text-sm text-skin-gray">Recent local scans stored on your device.</p>
                 </article>
+
+                <button
+                    type="button"
+                    onClick={onViewTrends}
+                    className="rounded-2xl bg-[#A8C3A0] px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#95af8d]"
+                >
+                    View Trend Snapshot
+                </button>
 
                 {history.length === 0 && (
                     <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 text-sm text-skin-gray shadow-soft ring-1 ring-skin-text/5 backdrop-blur-lg">
@@ -69,7 +78,13 @@ export function History({ history, onBack, onClear, onDeleteEntry }: HistoryProp
                     </article>
                 ))}
 
-                {history.length === 0 ? (
+            </motion.section>
+
+            <div className="fixed inset-x-0 bottom-3 z-20 px-5">
+                <div className="mx-auto max-w-md">
+                    <div className="h-4 bg-gradient-to-b from-transparent to-[#faf9f7]/85" />
+                </div>
+                <div className={`mx-auto grid max-w-md gap-3 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg ${history.length === 0 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                     <button
                         type="button"
                         onClick={onBack}
@@ -77,15 +92,7 @@ export function History({ history, onBack, onClear, onDeleteEntry }: HistoryProp
                     >
                         Back
                     </button>
-                ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            className="rounded-2xl border border-skin-text/30 bg-skin-beige px-4 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
-                        >
-                            Back
-                        </button>
+                    {history.length > 0 && (
                         <button
                             type="button"
                             onClick={onClear}
@@ -93,9 +100,9 @@ export function History({ history, onBack, onClear, onDeleteEntry }: HistoryProp
                         >
                             Clear All Scans
                         </button>
-                    </div>
-                )}
-            </motion.section>
+                    )}
+                </div>
+            </div>
         </main>
     )
 }

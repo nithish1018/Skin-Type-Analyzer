@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 
 interface ScanTipsProps {
     onContinue: () => void
+    onCancel: () => void
     dontShowAgain: boolean
     onToggleDontShowAgain: (checked: boolean) => void
 }
@@ -27,11 +28,12 @@ const tips = [
 
 export function ScanTips({
     onContinue,
+    onCancel,
     dontShowAgain,
     onToggleDontShowAgain,
 }: ScanTipsProps) {
     return (
-        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_15%_15%,rgba(232,207,193,0.6),transparent_45%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-12 pt-8 text-skin-text">
+        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_15%_15%,rgba(232,207,193,0.6),transparent_45%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-32 pt-8 text-skin-text">
             <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -68,17 +70,29 @@ export function ScanTips({
                     />
                     <span>Don&apos;t show again</span>
                 </label>
+            </motion.section>
 
-                <div className="mt-2">
+            <div className="fixed inset-x-0 bottom-3 z-20 px-5">
+                <div className="mx-auto max-w-md">
+                    <div className="h-4 bg-gradient-to-b from-transparent to-[#faf9f7]/85" />
+                </div>
+                <div className="mx-auto grid max-w-md grid-cols-2 gap-3 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="rounded-2xl border border-skin-text/30 bg-skin-beige px-4 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
+                    >
+                        Cancel
+                    </button>
                     <button
                         type="button"
                         onClick={onContinue}
-                        className="w-full rounded-2xl bg-[#c98f9d] px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190]"
+                        className="rounded-2xl bg-[#c98f9d] px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190]"
                     >
                         Continue
                     </button>
                 </div>
-            </motion.section>
+            </div>
         </main>
     )
 }

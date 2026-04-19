@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { ResultCard } from '../components/ResultCard'
-import type { SkinAnalysisResult, SkinRecommendation, SkinType } from '../types/skin'
+import type { ScanHistoryEntry, SkinAnalysisResult, SkinRecommendation, SkinType } from '../types/skin'
+import { buildRecentTrendSnapshot } from '../utils/trends'
 
 interface ResultsProps {
     imageSrc: string | null
     result: SkinAnalysisResult
+    history: ScanHistoryEntry[]
     onBackHome: () => void
     onViewHistory: () => void
 }
@@ -213,9 +215,10 @@ const getHowItWasCalculated = (result: SkinAnalysisResult): string[] => {
     ]
 }
 
-export function Results({ imageSrc, result, onBackHome, onViewHistory }: ResultsProps) {
+export function Results({ imageSrc, result, history, onBackHome, onViewHistory }: ResultsProps) {
     const routine = recommendations[result.skinType]
     const howItWasCalculated = getHowItWasCalculated(result)
+    const recentTrend = buildRecentTrendSnapshot(history, result)
     const appUrl = window.location.origin + window.location.pathname
     const [isSharing, setIsSharing] = useState(false)
     const [isDownloading, setIsDownloading] = useState(false)
@@ -518,7 +521,7 @@ export function Results({ imageSrc, result, onBackHome, onViewHistory }: Results
     }
 
     return (
-        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_10%,rgba(232,207,193,0.65),transparent_45%),radial-gradient(circle_at_85%_20%,rgba(216,167,177,0.22),transparent_35%),linear-gradient(170deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-16 pt-8 text-skin-text">
+        <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_10%,rgba(232,207,193,0.65),transparent_45%),radial-gradient(circle_at_85%_20%,rgba(216,167,177,0.22),transparent_35%),linear-gradient(170deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-32 pt-8 text-skin-text">
             <motion.section
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -610,6 +613,51 @@ export function Results({ imageSrc, result, onBackHome, onViewHistory }: Results
                     </motion.article>
                 )}
 
+                {recentTrend && (
+                    <motion.article
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.11 }}
+                        className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
+                    >
+                        <h2 className="text-lg font-semibold text-skin-text">Trend vs Recent Scans</h2>
+                        <p className="mt-1 text-sm text-skin-gray">{recentTrend.title}</p>
+                        <div className="mt-4 space-y-3">
+                            {recentTrend.metrics.map((metric) => {
+                                const deltaText = metric.delta === null ? '—' : `${metric.delta > 0 ? '+' : ''}${metric.delta.toFixed(0)}`
+                                const statusTone = metric.direction === 'improving'
+                                    ? 'text-[#5f8a57]'
+                                    : metric.direction === 'declining'
+                                        ? 'text-[#9a5f6f]'
+                                        : 'text-skin-gray'
+
+                                return (
+                                    <div key={metric.label} className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-3">
+                                        <div className="flex items-center justify-between gap-3 text-sm">
+                                            <p className="font-medium text-skin-text">{metric.label}</p>
+                                            <p className={statusTone}>{metric.note}</p>
+                                        </div>
+                                        <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-skin-gray">
+                                            <div>
+                                                <p>{recentTrend.currentLabel}</p>
+                                                <p className="mt-1 text-sm font-semibold text-skin-text">{metric.current === null ? '—' : `${metric.current.toFixed(0)}%`}</p>
+                                            </div>
+                                            <div>
+                                                <p>{recentTrend.baselineLabel}</p>
+                                                <p className="mt-1 text-sm font-semibold text-skin-text">{metric.baseline === null ? '—' : `${metric.baseline.toFixed(0)}%`}</p>
+                                            </div>
+                                            <div>
+                                                <p>Change</p>
+                                                <p className={`mt-1 text-sm font-semibold ${statusTone}`}>{deltaText}%</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </motion.article>
+                )}
+
                 <ResultCard title="Dark Spots" value={`${result.darkSpots}%`} helper="Pigmentation tendency" />
                 <ResultCard title="Acne Risk Label" value={getRiskLabel(result.acneRisk)} helper={`${result.acneRisk}% probability`} />
 
@@ -677,41 +725,46 @@ export function Results({ imageSrc, result, onBackHome, onViewHistory }: Results
                     </div>
                 </motion.article>
 
-                <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <button
-                        type="button"
-                        onClick={onBackHome}
-                        className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
-                    >
-                        Back to Home
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onViewHistory}
-                        className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
-                    >
-                        History
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            void onShare()
-                        }}
-                        disabled={isSharing}
-                        className="rounded-2xl bg-[#c98f9d] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190] disabled:opacity-60"
-                    >
-                        {isSharing ? 'Sharing...' : 'Share Result'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            void downloadReport()
-                        }}
-                        disabled={isDownloading}
-                        className="rounded-2xl bg-[#A8C3A0] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#95af8d] disabled:opacity-60"
-                    >
-                        {isDownloading ? 'Creating...' : 'Download Report'}
-                    </button>
+                <div className="fixed inset-x-0 bottom-3 z-20 px-5">
+                    <div className="mx-auto max-w-md">
+                        <div className="h-4 bg-gradient-to-b from-transparent to-[#faf9f7]/85" />
+                    </div>
+                    <div className="mx-auto grid max-w-md grid-cols-2 gap-2 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
+                        <button
+                            type="button"
+                            onClick={onBackHome}
+                            className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
+                        >
+                            Back to Home
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onViewHistory}
+                            className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
+                        >
+                            History
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                void onShare()
+                            }}
+                            disabled={isSharing}
+                            className="rounded-2xl bg-[#c98f9d] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190] disabled:opacity-60"
+                        >
+                            {isSharing ? 'Sharing...' : 'Share Result'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                void downloadReport()
+                            }}
+                            disabled={isDownloading}
+                            className="rounded-2xl bg-[#A8C3A0] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#95af8d] disabled:opacity-60"
+                        >
+                            {isDownloading ? 'Creating...' : 'Download Report'}
+                        </button>
+                    </div>
                 </div>
             </motion.section>
         </main>

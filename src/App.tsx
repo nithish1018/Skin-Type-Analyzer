@@ -8,13 +8,14 @@ import { Preview } from './pages/Preview'
 import { Results } from './pages/Results'
 import { ScanTips } from './pages/ScanTips'
 import { SkinQuestions } from './pages/SkinQuestions'
+import { Trends } from './pages/Trends'
 import type { FaceDetectionOutcome } from './types/face'
 import type { ScanHistoryEntry, SkinAnalysisResult, SkinQuestionAnswers } from './types/skin'
 import { analyzeSkinFrames, assessImageQuality } from './utils/analyzeSkin.ts'
 import { cropFace, detectFace, initFaceDetection } from './utils/faceDetection'
 import { evaluateQuestionnaire, mergeWeightedSkinResult } from './utils/questionnaire'
 
-type Screen = 'landing' | 'tips' | 'camera' | 'preview' | 'questions' | 'analyzing' | 'results' | 'history'
+type Screen = 'landing' | 'tips' | 'camera' | 'preview' | 'questions' | 'analyzing' | 'results' | 'history' | 'trends'
 
 const HISTORY_KEY = 'skin-condition-analyzer-history-v1'
 const SCAN_TIPS_PREF_KEY = 'skin-condition-analyzer-skip-tips-v1'
@@ -391,6 +392,7 @@ function App() {
     return (
       <ScanTips
         onContinue={startScan}
+        onCancel={() => setScreen('landing')}
         dontShowAgain={skipTipsPreference}
         onToggleDontShowAgain={setSkipTipsPreference}
       />
@@ -507,6 +509,7 @@ function App() {
       <Results
         imageSrc={capturedImage}
         result={analysisResult}
+        history={history}
         onBackHome={() => setScreen('landing')}
         onViewHistory={() => setScreen('history')}
       />
@@ -518,6 +521,7 @@ function App() {
       <History
         history={history}
         onBack={() => setScreen('landing')}
+        onViewTrends={() => setScreen('trends')}
         onDeleteEntry={(entryId) => {
           setHistory((prev) => prev.filter((entry) => entry.id !== entryId))
         }}
@@ -525,6 +529,16 @@ function App() {
           setHistory([])
           window.localStorage.removeItem(HISTORY_KEY)
         }}
+      />
+    )
+  }
+
+  if (screen === 'trends') {
+    return (
+      <Trends
+        history={history}
+        onBackHome={() => setScreen('landing')}
+        onBackToScan={() => setScreen('history')}
       />
     )
   }
