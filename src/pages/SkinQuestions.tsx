@@ -64,7 +64,7 @@ export function SkinQuestions({ onBack, onComplete }: SkinQuestionsProps) {
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35 }}
-                className="mx-auto flex max-w-md flex-col gap-4"
+                className="mx-auto flex w-full max-w-3xl flex-col gap-4"
             >
                 <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5">
                     <p className="text-xs uppercase tracking-[0.16em] text-skin-gray">Quick Skin Profile</p>

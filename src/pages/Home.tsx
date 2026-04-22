@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { AdSlot } from '../components/AdSlot'
 
 interface HomeProps {
     onStart: () => void
@@ -8,7 +7,6 @@ interface HomeProps {
 }
 
 export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
-    const homeAdSlot = import.meta.env.VITE_ADSENSE_SLOT_HOME as string | undefined
 
     return (
         <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(232,207,193,0.75),transparent_45%),radial-gradient(circle_at_80%_25%,rgba(216,167,177,0.3),transparent_35%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-6 pb-32 pt-8 text-skin-text">
@@ -19,7 +17,7 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55 }}
-                className="relative z-10 mx-auto flex min-h-[72vh] max-w-md flex-col justify-between gap-5"
+                className="relative z-10 mx-auto flex min-h-[72vh] w-full max-w-5xl flex-col justify-between gap-5"
             >
                 <div className="rounded-3xl border border-skin-text/20 bg-skin-white p-6 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
                     <p className="text-xs uppercase tracking-[0.22em] text-skin-gray">Skin Condition Analyzer</p>
@@ -34,42 +32,47 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                    <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                        <p className="text-sm font-medium text-skin-text">Smart Question Boost</p>
-                        <p className="mt-1 text-xs text-skin-gray">Quick skin questions improve result reliability</p>
-                    </article>
-                    <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                        <p className="text-sm font-medium text-skin-text">Weighted Final Analysis</p>
-                        <p className="mt-1 text-xs text-skin-gray">Photo signals + profile answers for stronger results</p>
-                    </article>
-                </div>
+                <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+                    <div className="space-y-5">
+                        <div className="grid grid-cols-2 gap-3">
+                            <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
+                                <p className="text-sm font-medium text-skin-text">Smart Question Boost</p>
+                                <p className="mt-1 text-xs text-skin-gray">Quick skin questions improve result reliability</p>
+                            </article>
+                            <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
+                                <p className="text-sm font-medium text-skin-text">Weighted Final Analysis</p>
+                                <p className="mt-1 text-xs text-skin-gray">Photo signals + profile answers for stronger results</p>
+                            </article>
+                        </div>
 
-                <AdSlot slot={homeAdSlot ?? ''} minHeightClassName="min-h-[90px]" />
-
-                <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                    <p className="text-sm font-medium text-skin-text">What you will get</p>
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-                        <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Skin Type</div>
-                        <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Hydration</div>
-                        <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Acne Risk</div>
+                        <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
+                            <p className="text-sm font-medium text-skin-text">What you will get</p>
+                            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Skin Type</div>
+                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Hydration</div>
+                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Acne Risk</div>
+                            </div>
+                        </article>
                     </div>
-                </article>
 
-                <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-skin-gray">Privacy Notice</p>
-                    <p className="mt-2 text-sm leading-relaxed text-skin-gray">
-                        Your photos are processed locally on your device for analysis only. This system does not store your images or use them for model training.
-                    </p>
-                </article>
+                    <div className="space-y-5">
+                        <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-skin-gray">Privacy Notice</p>
+                            <p className="mt-2 text-sm leading-relaxed text-skin-gray">
+                                Your photos are processed locally on your device for analysis only. This system does not store your images or use them for model training.
+                            </p>
+                        </article>
+
+                    </div>
+                </div>
 
             </motion.section>
 
             <div className="fixed inset-x-0 bottom-3 z-20 px-6">
-                <div className="mx-auto max-w-md">
+                <div className="mx-auto max-w-5xl">
                     <div className="h-4 bg-gradient-to-b from-transparent to-[#faf9f7]/85" />
                 </div>
-                <div className="mx-auto grid max-w-md grid-cols-2 gap-3 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
+                <div className="mx-auto grid max-w-5xl grid-cols-2 gap-3 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
                     <button
                         type="button"
                         onClick={onStart}

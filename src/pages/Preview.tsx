@@ -16,7 +16,7 @@ export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze,
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4 }}
-                className="mx-auto flex max-w-md flex-col gap-5"
+                className="mx-auto flex w-full max-w-4xl flex-col gap-5"
             >
                 <div className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-card ring-1 ring-skin-text/5 backdrop-blur-md">
                     <h1 className="text-xl font-semibold text-skin-text">Captured Preview</h1>
@@ -35,7 +35,7 @@ export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze,
                 </div>
 
                 <div className="overflow-hidden rounded-3xl border border-skin-text/20 bg-skin-white shadow-card ring-1 ring-skin-text/5">
-                    <img src={imageSrc} alt="Captured face preview" className="h-[60vh] w-full object-cover" />
+                    <img src={imageSrc} alt="Captured face preview" className="h-[56vh] w-full object-cover md:h-[62vh]" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

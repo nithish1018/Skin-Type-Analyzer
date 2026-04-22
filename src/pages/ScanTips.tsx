@@ -38,7 +38,7 @@ export function ScanTips({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35 }}
-                className="mx-auto flex max-w-md flex-col gap-4"
+                className="mx-auto flex w-full max-w-4xl flex-col gap-4"
             >
                 <article className="rounded-3xl border border-skin-tone/70 bg-skin-white/92 p-5 shadow-card backdrop-blur-lg">
                     <p className="text-xs uppercase tracking-[0.18em] text-skin-gray">Before You Scan</p>
@@ -73,10 +73,10 @@ export function ScanTips({
             </motion.section>
 
             <div className="fixed inset-x-0 bottom-3 z-20 px-5">
-                <div className="mx-auto max-w-md">
+                <div className="mx-auto max-w-4xl">
                     <div className="h-4 bg-gradient-to-b from-transparent to-[#faf9f7]/85" />
                 </div>
-                <div className="mx-auto grid max-w-md grid-cols-2 gap-3 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
+                <div className="mx-auto grid max-w-4xl grid-cols-2 gap-3 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
                     <button
                         type="button"
                         onClick={onCancel}

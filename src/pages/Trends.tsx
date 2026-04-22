@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { AdSlot } from '../components/AdSlot'
 import type { ScanHistoryEntry } from '../types/skin'
 import { buildWindowTrendSnapshot } from '../utils/trends'
 
@@ -10,7 +9,6 @@ interface TrendsProps {
 }
 
 export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
-    const trendsAdSlot = import.meta.env.VITE_ADSENSE_SLOT_TRENDS as string | undefined
     const trendSnapshots = [buildWindowTrendSnapshot(history, 7), buildWindowTrendSnapshot(history, 30)].filter(
         (snapshot): snapshot is NonNullable<typeof snapshot> => snapshot !== null,
     )
@@ -20,14 +18,13 @@ export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
             <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mx-auto flex max-w-md flex-col gap-4"
+                className="mx-auto flex w-full max-w-4xl flex-col gap-4"
             >
                 <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
                     <h1 className="text-2xl font-semibold text-skin-text">Trends</h1>
                     <p className="mt-1 text-sm text-skin-gray">Compare hydration, oiliness, and acne risk across recent scans.</p>
                 </article>
 
-                <AdSlot slot={trendsAdSlot ?? ''} minHeightClassName="min-h-[90px]" />
 
                 {history.length === 0 && (
                     <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 text-sm text-skin-gray shadow-soft ring-1 ring-skin-text/5 backdrop-blur-lg">
@@ -77,10 +74,10 @@ export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
             </motion.section>
 
             <div className="fixed inset-x-0 bottom-3 z-20 px-5">
-                <div className="mx-auto max-w-md">
+                <div className="mx-auto max-w-4xl">
                     <div className="h-4 bg-gradient-to-b from-transparent to-[#faf9f7]/85" />
                 </div>
-                <div className="mx-auto grid max-w-md grid-cols-2 gap-3 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
+                <div className="mx-auto grid max-w-4xl grid-cols-2 gap-3 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
                     <button
                         type="button"
                         onClick={onBackHome}

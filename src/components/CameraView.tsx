@@ -205,7 +205,7 @@ export function CameraView({
             </div>
 
             <div className="border-t border-skin-text/20 bg-skin-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-card backdrop-blur-xl">
-                <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                <div className="mx-auto flex w-full max-w-4xl flex-col gap-3">
                     <p className="text-center text-xs uppercase tracking-[0.16em] text-skin-gray">Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results</p>
                     <p className={`rounded-xl border px-3 py-2 text-center text-sm font-semibold backdrop-blur-md ${statusClassName}`}>
                         {hasAlignedFace ? 'Face position: Good' : statusText}

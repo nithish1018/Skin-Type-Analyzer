@@ -60,7 +60,6 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState<SkinAnalysisResult | null>(null)
   const [history, setHistory] = useState<ScanHistoryEntry[]>(getInitialHistory)
   const [skipTipsPreference, setSkipTipsPreference] = useState<boolean>(getInitialSkipTipsPreference)
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768)
   const [previewWarning, setPreviewWarning] = useState<string | null>(null)
   const [isDetectorLoading, setIsDetectorLoading] = useState(false)
   const [isCapturingFrames, setIsCapturingFrames] = useState(false)
@@ -164,12 +163,6 @@ function App() {
   useEffect(() => {
     window.localStorage.setItem(SCAN_TIPS_PREF_KEY, String(skipTipsPreference))
   }, [skipTipsPreference])
-
-  useEffect(() => {
-    const onResize = () => setIsDesktop(window.innerWidth > 768)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
 
   const openScanTips = () => {
     if (skipTipsPreference) {
@@ -363,19 +356,6 @@ function App() {
     })
     setScreen('camera')
     void startCamera()
-  }
-
-  if (isDesktop) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_15%_12%,rgba(232,207,193,0.62),transparent_42%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] p-6 text-skin-text">
-        <section className="max-w-sm rounded-3xl border border-skin-text/20 bg-skin-white p-6 text-center shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
-          <h1 className="text-2xl font-semibold text-skin-text">Skin Analyzer</h1>
-          <p className="mt-3 text-sm text-skin-gray">
-            Please open this app on your mobile device for the best experience
-          </p>
-        </section>
-      </main>
-    )
   }
 
   if (screen === 'landing') {

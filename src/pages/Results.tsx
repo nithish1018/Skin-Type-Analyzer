@@ -526,7 +526,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45 }}
-                className="mx-auto flex max-w-md flex-col gap-5"
+                className="mx-auto flex w-full max-w-5xl flex-col gap-5"
             >
                 <article className="overflow-hidden rounded-3xl border border-skin-text/20 bg-skin-white p-6 shadow-card ring-1 ring-skin-text/5 backdrop-blur-xl">
                     <p className="text-xs uppercase tracking-[0.2em] text-skin-gray">Analysis Complete</p>
@@ -547,189 +547,195 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                     )}
                 </article>
 
-                <motion.article
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.05 }}
-                    className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5"
-                >
-                    <h2 className="text-lg font-semibold text-skin-text">Skin Signals</h2>
-                    <div className="mt-4 space-y-4">
-                        {metricBars.map((metric, index) => (
-                            <div key={metric.label}>
-                                <div className="mb-1 flex items-center justify-between text-sm">
-                                    <p className="text-skin-gray">{metric.label}</p>
-                                    <p className="font-medium text-skin-text">{metric.value}%</p>
-                                </div>
-                                <div className="h-3 overflow-hidden rounded-full border border-skin-tone/80 bg-skin-beige">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${metric.value}%` }}
-                                        transition={{ duration: 0.65, delay: 0.1 + index * 0.12, ease: 'easeOut' }}
-                                        style={{ background: metric.gradient }}
-                                        className="h-full rounded-full"
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </motion.article>
-
-                {result.weighting && (
+                <div className="grid gap-5 xl:grid-cols-2">
                     <motion.article
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.09 }}
-                        className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
+                        transition={{ duration: 0.4, delay: 0.05 }}
+                        className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5"
                     >
-                        <h2 className="text-lg font-semibold text-skin-text">Weighted Result Blend</h2>
-                        <p className="mt-1 text-sm text-skin-gray">
-                            Final result combines photo signals with your skin profile answers.
-                        </p>
-                        <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
-                            <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                <p className="text-[11px] leading-tight text-skin-gray">Image Weight</p>
-                                <p className="mt-1 text-sm font-semibold text-skin-text">{imageWeightPercent}%</p>
-                            </div>
-                            <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                <p className="text-[11px] leading-tight text-skin-gray">Questionnaire Weight</p>
-                                <p className="mt-1 text-sm font-semibold text-skin-text">{questionnaireWeightPercent}%</p>
-                            </div>
-                            <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                <p className="text-[11px] leading-tight text-skin-gray">Dehydration Tendency</p>
-                                <p className="mt-1 text-sm font-semibold text-skin-text">{dehydrationTendencyPercent}%</p>
-                            </div>
-                        </div>
-                        <div className="mt-3 space-y-1 text-xs text-skin-gray">
-                            <p>
-                                Image-only type:{' '}
-                                <span className="font-semibold text-skin-text">{result.weighting.imageOnlySkinType}</span>
-                            </p>
-                            <p>
-                                Questionnaire type:{' '}
-                                <span className="font-semibold text-skin-text">{result.weighting.questionnaireSkinType}</span>
-                            </p>
-                        </div>
-                    </motion.article>
-                )}
-
-                {recentTrend && (
-                    <motion.article
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.11 }}
-                        className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
-                    >
-                        <h2 className="text-lg font-semibold text-skin-text">Trend vs Recent Scans</h2>
-                        <p className="mt-1 text-sm text-skin-gray">{recentTrend.title}</p>
-                        <div className="mt-4 space-y-3">
-                            {recentTrend.metrics.map((metric) => {
-                                const deltaText = metric.delta === null ? '—' : `${metric.delta > 0 ? '+' : ''}${metric.delta.toFixed(0)}`
-                                const statusTone = metric.direction === 'improving'
-                                    ? 'text-[#5f8a57]'
-                                    : metric.direction === 'declining'
-                                        ? 'text-[#9a5f6f]'
-                                        : 'text-skin-gray'
-
-                                return (
-                                    <div key={metric.label} className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-3">
-                                        <div className="flex items-center justify-between gap-3 text-sm">
-                                            <p className="font-medium text-skin-text">{metric.label}</p>
-                                            <p className={statusTone}>{metric.note}</p>
-                                        </div>
-                                        <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-skin-gray">
-                                            <div>
-                                                <p>{recentTrend.currentLabel}</p>
-                                                <p className="mt-1 text-sm font-semibold text-skin-text">{metric.current === null ? '—' : `${metric.current.toFixed(0)}%`}</p>
-                                            </div>
-                                            <div>
-                                                <p>{recentTrend.baselineLabel}</p>
-                                                <p className="mt-1 text-sm font-semibold text-skin-text">{metric.baseline === null ? '—' : `${metric.baseline.toFixed(0)}%`}</p>
-                                            </div>
-                                            <div>
-                                                <p>Change</p>
-                                                <p className={`mt-1 text-sm font-semibold ${statusTone}`}>{deltaText}%</p>
-                                            </div>
-                                        </div>
+                        <h2 className="text-lg font-semibold text-skin-text">Skin Signals</h2>
+                        <div className="mt-4 space-y-4">
+                            {metricBars.map((metric, index) => (
+                                <div key={metric.label}>
+                                    <div className="mb-1 flex items-center justify-between text-sm">
+                                        <p className="text-skin-gray">{metric.label}</p>
+                                        <p className="font-medium text-skin-text">{metric.value}%</p>
                                     </div>
-                                )
-                            })}
+                                    <div className="h-3 overflow-hidden rounded-full border border-skin-tone/80 bg-skin-beige">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${metric.value}%` }}
+                                            transition={{ duration: 0.65, delay: 0.1 + index * 0.12, ease: 'easeOut' }}
+                                            style={{ background: metric.gradient }}
+                                            className="h-full rounded-full"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </motion.article>
-                )}
 
-                <ResultCard title="Dark Spots" value={`${result.darkSpots}%`} helper="Pigmentation tendency" />
-                <ResultCard title="Acne Risk Label" value={getRiskLabel(result.acneRisk)} helper={`${result.acneRisk}% probability`} />
+                    {result.weighting && (
+                        <motion.article
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.09 }}
+                            className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
+                        >
+                            <h2 className="text-lg font-semibold text-skin-text">Weighted Result Blend</h2>
+                            <p className="mt-1 text-sm text-skin-gray">
+                                Final result combines photo signals with your skin profile answers.
+                            </p>
+                            <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+                                <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
+                                    <p className="text-[11px] leading-tight text-skin-gray">Image Weight</p>
+                                    <p className="mt-1 text-sm font-semibold text-skin-text">{imageWeightPercent}%</p>
+                                </div>
+                                <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
+                                    <p className="text-[11px] leading-tight text-skin-gray">Questionnaire Weight</p>
+                                    <p className="mt-1 text-sm font-semibold text-skin-text">{questionnaireWeightPercent}%</p>
+                                </div>
+                                <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
+                                    <p className="text-[11px] leading-tight text-skin-gray">Dehydration Tendency</p>
+                                    <p className="mt-1 text-sm font-semibold text-skin-text">{dehydrationTendencyPercent}%</p>
+                                </div>
+                            </div>
+                            <div className="mt-3 space-y-1 text-xs text-skin-gray">
+                                <p>
+                                    Image-only type:{' '}
+                                    <span className="font-semibold text-skin-text">{result.weighting.imageOnlySkinType}</span>
+                                </p>
+                                <p>
+                                    Questionnaire type:{' '}
+                                    <span className="font-semibold text-skin-text">{result.weighting.questionnaireSkinType}</span>
+                                </p>
+                            </div>
+                        </motion.article>
+                    )}
 
-                <motion.article
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.45, delay: 0.12 }}
-                    className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
-                >
-                    <h2 className="text-lg font-semibold text-skin-text">How this was calculated</h2>
-                    <p className="mt-2 text-sm text-skin-gray">
-                        This result comes from the face photo you captured and the stable frames from the burst.
-                    </p>
-                    <ul className="mt-3 space-y-2 text-sm text-skin-gray">
-                        {howItWasCalculated.map((line) => (
-                            <motion.li
-                                initial={{ opacity: 0, x: 8 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.3 }}
-                                key={line}
-                                className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2"
-                            >
-                                {line}
-                            </motion.li>
-                        ))}
-                    </ul>
-                </motion.article>
+                    {recentTrend && (
+                        <motion.article
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.11 }}
+                            className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5 xl:col-span-2"
+                        >
+                            <h2 className="text-lg font-semibold text-skin-text">Trend vs Recent Scans</h2>
+                            <p className="mt-1 text-sm text-skin-gray">{recentTrend.title}</p>
+                            <div className="mt-4 space-y-3">
+                                {recentTrend.metrics.map((metric) => {
+                                    const deltaText = metric.delta === null ? '—' : `${metric.delta > 0 ? '+' : ''}${metric.delta.toFixed(0)}`
+                                    const statusTone = metric.direction === 'improving'
+                                        ? 'text-[#5f8a57]'
+                                        : metric.direction === 'declining'
+                                            ? 'text-[#9a5f6f]'
+                                            : 'text-skin-gray'
 
-                <motion.article
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.16 }}
-                    className="rounded-3xl border border-[#e6b85a]/70 bg-[linear-gradient(145deg,#fcf3dd_0%,#fff7e8_100%)] p-4 shadow-soft ring-1 ring-[#e6b85a]/35"
-                >
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a4e0c]">Friendly Reality Check</p>
-                    <p className="mt-2 text-sm font-medium text-[#7a4e0c]">
-                        Useful for trends, not a final diagnosis. Treat this as smart guidance and confirm medical concerns with a dermatologist.
-                    </p>
-                </motion.article>
+                                    return (
+                                        <div key={metric.label} className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-3">
+                                            <div className="flex items-center justify-between gap-3 text-sm">
+                                                <p className="font-medium text-skin-text">{metric.label}</p>
+                                                <p className={statusTone}>{metric.note}</p>
+                                            </div>
+                                            <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-skin-gray">
+                                                <div>
+                                                    <p>{recentTrend.currentLabel}</p>
+                                                    <p className="mt-1 text-sm font-semibold text-skin-text">{metric.current === null ? '—' : `${metric.current.toFixed(0)}%`}</p>
+                                                </div>
+                                                <div>
+                                                    <p>{recentTrend.baselineLabel}</p>
+                                                    <p className="mt-1 text-sm font-semibold text-skin-text">{metric.baseline === null ? '—' : `${metric.baseline.toFixed(0)}%`}</p>
+                                                </div>
+                                                <div>
+                                                    <p>Change</p>
+                                                    <p className={`mt-1 text-sm font-semibold ${statusTone}`}>{deltaText}%</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </motion.article>
+                    )}
 
-                <motion.article
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.45, delay: 0.2 }}
-                    className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
-                >
-                    <h2 className="text-lg font-semibold text-skin-text">Recommended Routine</h2>
-                    <div className="mt-3 grid gap-4 text-sm text-skin-text">
-                        <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige p-3">
-                            <h3 className="font-medium text-skin-text">Morning</h3>
-                            <ul className="mt-2 space-y-1 text-skin-gray">
-                                {routine.morningRoutine.map((step) => (
-                                    <li key={step}>• {step}</li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige p-3">
-                            <h3 className="font-medium text-skin-text">Night</h3>
-                            <ul className="mt-2 space-y-1 text-skin-gray">
-                                {routine.nightRoutine.map((step) => (
-                                    <li key={step}>• {step}</li>
-                                ))}
-                            </ul>
-                        </div>
+                    <div className="grid gap-5 sm:grid-cols-2 xl:col-span-2">
+                        <ResultCard title="Dark Spots" value={`${result.darkSpots}%`} helper="Pigmentation tendency" />
+                        <ResultCard title="Acne Risk Label" value={getRiskLabel(result.acneRisk)} helper={`${result.acneRisk}% probability`} />
                     </div>
-                </motion.article>
+                </div>
+
+                <div className="grid gap-5 xl:grid-cols-2">
+                    <motion.article
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45, delay: 0.12 }}
+                        className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5 xl:col-span-2"
+                    >
+                        <h2 className="text-lg font-semibold text-skin-text">How this was calculated</h2>
+                        <p className="mt-2 text-sm text-skin-gray">
+                            This result comes from the face photo you captured and the stable frames from the burst.
+                        </p>
+                        <ul className="mt-3 space-y-2 text-sm text-skin-gray">
+                            {howItWasCalculated.map((line) => (
+                                <motion.li
+                                    initial={{ opacity: 0, x: 8 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    key={line}
+                                    className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2"
+                                >
+                                    {line}
+                                </motion.li>
+                            ))}
+                        </ul>
+                    </motion.article>
+
+                    <motion.article
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.16 }}
+                        className="rounded-3xl border border-[#e6b85a]/70 bg-[linear-gradient(145deg,#fcf3dd_0%,#fff7e8_100%)] p-4 shadow-soft ring-1 ring-[#e6b85a]/35"
+                    >
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a4e0c]">Friendly Reality Check</p>
+                        <p className="mt-2 text-sm font-medium text-[#7a4e0c]">
+                            Useful for trends, not a final diagnosis. Treat this as smart guidance and confirm medical concerns with a dermatologist.
+                        </p>
+                    </motion.article>
+
+                    <motion.article
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45, delay: 0.2 }}
+                        className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
+                    >
+                        <h2 className="text-lg font-semibold text-skin-text">Recommended Routine</h2>
+                        <div className="mt-3 grid gap-4 text-sm text-skin-text md:grid-cols-2 xl:grid-cols-1">
+                            <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige p-3">
+                                <h3 className="font-medium text-skin-text">Morning</h3>
+                                <ul className="mt-2 space-y-1 text-skin-gray">
+                                    {routine.morningRoutine.map((step) => (
+                                        <li key={step}>• {step}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige p-3">
+                                <h3 className="font-medium text-skin-text">Night</h3>
+                                <ul className="mt-2 space-y-1 text-skin-gray">
+                                    {routine.nightRoutine.map((step) => (
+                                        <li key={step}>• {step}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </motion.article>
+                </div>
 
                 <div className="fixed inset-x-0 bottom-3 z-20 px-5">
-                    <div className="mx-auto max-w-md">
+                    <div className="mx-auto max-w-5xl">
                         <div className="h-4 bg-gradient-to-b from-transparent to-[#faf9f7]/85" />
                     </div>
-                    <div className="mx-auto grid max-w-md grid-cols-2 gap-2 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
+                    <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2 rounded-3xl border border-skin-text/15 bg-skin-white/92 p-2 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg md:grid-cols-4">
                         <button
                             type="button"
                             onClick={onBackHome}
