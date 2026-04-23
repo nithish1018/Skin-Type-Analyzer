@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useI18n } from '../i18n/I18nProvider'
 
 interface PreviewProps {
     imageSrc: string
@@ -10,6 +11,8 @@ interface PreviewProps {
 }
 
 export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze, warning }: PreviewProps) {
+    const { t } = useI18n()
+
     return (
         <main className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,rgba(232,207,193,0.65),transparent_45%),linear-gradient(150deg,#FAF9F7_0%,#F5EDE4_100%)] px-5 pb-10 pt-7 text-skin-text">
             <motion.section
@@ -19,13 +22,16 @@ export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze,
                 className="mx-auto flex w-full max-w-4xl flex-col gap-5"
             >
                 <div className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-card ring-1 ring-skin-text/5 backdrop-blur-md">
-                    <h1 className="text-xl font-semibold text-skin-text">Captured Preview</h1>
-                    <p className="mt-1 text-sm text-skin-gray">Review the frame before skin analysis.</p>
+                    <h1 className="text-xl font-semibold text-skin-text">{t('preview.title', 'Captured Preview')}</h1>
+                    <p className="mt-1 text-sm text-skin-gray">{t('preview.subtitle', 'Review the frame before skin analysis.')}</p>
                     <p className="mt-2 text-xs text-skin-gray">
-                        Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results
+                        {t('common.stepFlow', 'Step 1: Capture -> Step 2: Analyze -> Step 3: Results')}
                     </p>
                     <p className="mt-2 text-xs text-skin-gray">
-                        Good shots captured: {Math.min(goodShots, targetShots)}/{targetShots}
+                        {t('preview.goodShots', 'Good shots captured: {current}/{target}', {
+                            current: Math.min(goodShots, targetShots),
+                            target: targetShots,
+                        })}
                     </p>
                     {warning && (
                         <p className="alert-warning mt-3 rounded-xl px-3 py-2 text-xs">
@@ -35,7 +41,7 @@ export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze,
                 </div>
 
                 <div className="overflow-hidden rounded-3xl border border-skin-text/20 bg-skin-white shadow-card ring-1 ring-skin-text/5">
-                    <img src={imageSrc} alt="Captured face preview" className="h-[56vh] w-full object-cover md:h-[62vh]" />
+                    <img src={imageSrc} alt={t('preview.imageAlt', 'Captured face preview')} className="h-[56vh] w-full object-cover md:h-[62vh]" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -44,14 +50,14 @@ export function Preview({ imageSrc, goodShots, targetShots, onRetake, onAnalyze,
                         onClick={onRetake}
                         className="rounded-2xl border border-skin-text/30 bg-skin-beige px-4 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                     >
-                        Retake
+                        {t('preview.retake', 'Retake')}
                     </button>
                     <button
                         type="button"
                         onClick={onAnalyze}
                         className="rounded-2xl bg-[#c98f9d] px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190]"
                     >
-                        Analyze Skin
+                        {t('preview.analyze', 'Analyze Skin')}
                     </button>
                 </div>
             </motion.section>

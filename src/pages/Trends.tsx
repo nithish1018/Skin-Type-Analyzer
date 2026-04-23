@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useI18n } from '../i18n/I18nProvider'
 import type { ScanHistoryEntry } from '../types/skin'
 import { buildWindowTrendSnapshot } from '../utils/trends'
 
@@ -9,6 +10,7 @@ interface TrendsProps {
 }
 
 export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
+    const { t } = useI18n()
     const trendSnapshots = [buildWindowTrendSnapshot(history, 7), buildWindowTrendSnapshot(history, 30)].filter(
         (snapshot): snapshot is NonNullable<typeof snapshot> => snapshot !== null,
     )
@@ -21,14 +23,14 @@ export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
                 className="mx-auto flex w-full max-w-4xl flex-col gap-4"
             >
                 <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
-                    <h1 className="text-2xl font-semibold text-skin-text">Trends</h1>
-                    <p className="mt-1 text-sm text-skin-gray">Compare hydration, oiliness, and acne risk across recent scans.</p>
+                    <h1 className="text-2xl font-semibold text-skin-text">{t('trends.title', 'Trends')}</h1>
+                    <p className="mt-1 text-sm text-skin-gray">{t('trends.subtitle', 'Compare hydration, oiliness, and acne risk across recent scans.')}</p>
                 </article>
 
 
                 {history.length === 0 && (
                     <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 text-sm text-skin-gray shadow-soft ring-1 ring-skin-text/5 backdrop-blur-lg">
-                        No scan history yet. Run a few analyses to see trends here.
+                        {t('trends.empty', 'No scan history yet. Run a few analyses to see trends here.')}
                     </article>
                 )}
 
@@ -37,7 +39,11 @@ export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                             <div>
                                 <h2 className="text-lg font-semibold text-skin-text">{snapshot.title}</h2>
-                                <p className="mt-1 text-sm text-skin-gray">{snapshot.sampleCount} scan{snapshot.sampleCount === 1 ? '' : 's'} used</p>
+                                <p className="mt-1 text-sm text-skin-gray">
+                                    {snapshot.sampleCount === 1
+                                        ? t('trends.scanUsed', '{count} scan used', { count: snapshot.sampleCount })
+                                        : t('trends.scansUsed', '{count} scans used', { count: snapshot.sampleCount })}
+                                </p>
                             </div>
                             <p className="text-xs text-skin-gray">{snapshot.baselineLabel}</p>
                         </div>
@@ -57,7 +63,7 @@ export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
                                             {metric.current === null ? '—' : `${metric.current.toFixed(0)}%`}
                                         </p>
                                         <p className={`mt-1 text-xs ${statusTone}`}>{metric.note}</p>
-                                        <p className="mt-1 text-[11px] text-skin-gray">Change: {deltaText}%</p>
+                                        <p className="mt-1 text-[11px] text-skin-gray">{t('trends.change', 'Change')}: {deltaText}%</p>
                                     </div>
                                 )
                             })}
@@ -67,7 +73,7 @@ export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
 
                 {history.length > 0 && trendSnapshots.length === 0 && (
                     <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 text-sm text-skin-gray shadow-soft ring-1 ring-skin-text/5 backdrop-blur-lg">
-                        You need a few more scans across different days to build useful trend comparisons.
+                        {t('trends.needMore', 'You need a few more scans across different days to build useful trend comparisons.')}
                     </article>
                 )}
 
@@ -83,14 +89,14 @@ export function Trends({ history, onBackHome, onBackToScan }: TrendsProps) {
                         onClick={onBackHome}
                         className="rounded-2xl border border-skin-text/30 bg-skin-beige px-4 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                     >
-                        Back to Home
+                        {t('common.backHome', 'Back to Home')}
                     </button>
                     <button
                         type="button"
                         onClick={onBackToScan}
                         className="rounded-2xl bg-[#c98f9d] px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190]"
                     >
-                        Back to History
+                        {t('trends.backHistory', 'Back to History')}
                     </button>
                 </div>
             </div>

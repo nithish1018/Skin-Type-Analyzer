@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion'
+import { LanguageSelector } from '../components/LanguageSelector'
+import { useI18n } from '../i18n/I18nProvider'
 
 interface HomeProps {
     onStart: () => void
@@ -7,6 +9,7 @@ interface HomeProps {
 }
 
 export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
+    const { t } = useI18n()
 
     return (
         <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(232,207,193,0.75),transparent_45%),radial-gradient(circle_at_80%_25%,rgba(216,167,177,0.3),transparent_35%),linear-gradient(160deg,#FAF9F7_0%,#F5EDE4_100%)] px-6 pb-32 pt-8 text-skin-text">
@@ -19,16 +22,20 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
                 transition={{ duration: 0.55 }}
                 className="relative z-10 mx-auto flex min-h-[72vh] w-full max-w-5xl flex-col justify-between gap-5"
             >
+                <div className="flex justify-end">
+                    <LanguageSelector />
+                </div>
+
                 <div className="rounded-3xl border border-skin-text/20 bg-skin-white p-6 shadow-card ring-1 ring-skin-text/5 backdrop-blur-lg">
-                    <p className="text-xs uppercase tracking-[0.22em] text-skin-gray">Skin Condition Analyzer</p>
+                    <p className="text-xs uppercase tracking-[0.22em] text-skin-gray">{t('home.appName', 'Skin Condition Analyzer')}</p>
                     <h1 className="mt-3 text-4xl font-semibold leading-tight text-skin-text">
-                        Skin Analyzer
+                        {t('home.title', 'Skin Analyzer')}
                     </h1>
                     <p className="mt-2 text-base leading-relaxed text-skin-gray">
-                        Understand your skin in seconds
+                        {t('home.subtitle', 'Understand your skin in seconds')}
                     </p>
                     <p className="mt-4 rounded-2xl bg-skin-beige px-3 py-2 text-xs text-skin-gray">
-                        Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results
+                        {t('common.stepFlow', 'Step 1: Capture -> Step 2: Analyze -> Step 3: Results')}
                     </p>
                 </div>
 
@@ -36,30 +43,30 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
                     <div className="space-y-5">
                         <div className="grid grid-cols-2 gap-3">
                             <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                                <p className="text-sm font-medium text-skin-text">Smart Question Boost</p>
-                                <p className="mt-1 text-xs text-skin-gray">Quick skin questions improve result reliability</p>
+                                <p className="text-sm font-medium text-skin-text">{t('home.smartBoostTitle', 'Smart Question Boost')}</p>
+                                <p className="mt-1 text-xs text-skin-gray">{t('home.smartBoostDesc', 'Quick skin questions improve result reliability')}</p>
                             </article>
                             <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                                <p className="text-sm font-medium text-skin-text">Weighted Final Analysis</p>
-                                <p className="mt-1 text-xs text-skin-gray">Photo signals + profile answers for stronger results</p>
+                                <p className="text-sm font-medium text-skin-text">{t('home.weightedTitle', 'Weighted Final Analysis')}</p>
+                                <p className="mt-1 text-xs text-skin-gray">{t('home.weightedDesc', 'Photo signals + profile answers for stronger results')}</p>
                             </article>
                         </div>
 
                         <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                            <p className="text-sm font-medium text-skin-text">What you will get</p>
+                            <p className="text-sm font-medium text-skin-text">{t('home.whatYouGet', 'What you will get')}</p>
                             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Skin Type</div>
-                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Hydration</div>
-                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">Acne Risk</div>
+                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">{t('home.skinType', 'Skin Type')}</div>
+                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">{t('home.hydration', 'Hydration')}</div>
+                                <div className="rounded-2xl border border-skin-tone/70 bg-skin-beige px-2 py-2 text-skin-text">{t('home.acneRisk', 'Acne Risk')}</div>
                             </div>
                         </article>
                     </div>
 
                     <div className="space-y-5">
                         <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-4 shadow-soft ring-1 ring-skin-text/5">
-                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-skin-gray">Privacy Notice</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-skin-gray">{t('home.privacyTitle', 'Privacy Notice')}</p>
                             <p className="mt-2 text-sm leading-relaxed text-skin-gray">
-                                Your photos are processed locally on your device for analysis only. This system does not store your images or use them for model training.
+                                {t('home.privacyDesc', 'Your photos are processed locally on your device for analysis only. This system does not store your images or use them for model training.')}
                             </p>
                         </article>
 
@@ -93,14 +100,14 @@ export function Home({ onStart, onViewHistory, historyCount }: HomeProps) {
                                 <path d="M18.05 5.2v1.8M17.15 6.1h1.8" stroke="#FFE9EF" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
                         </span>
-                        <span>Start Scan</span>
+                        <span>{t('home.startScan', 'Start Scan')}</span>
                     </button>
                     <button
                         type="button"
                         onClick={onViewHistory}
                         className="rounded-2xl border border-skin-text/30 bg-skin-beige px-4 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                     >
-                        Previous Scans ({historyCount})
+                        {t('home.previousScans', 'Previous Scans ({count})', { count: historyCount })}
                     </button>
                 </div>
             </div>

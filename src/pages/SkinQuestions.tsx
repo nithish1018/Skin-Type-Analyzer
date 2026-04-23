@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
+import { useI18n } from '../i18n/I18nProvider'
 import type { SkinQuestionAnswers, SkinQuestionId } from '../types/skin'
 import { skinQuestions } from '../utils/questionnaire'
 
@@ -22,11 +23,14 @@ const createInitialAnswers = (): SkinQuestionAnswers => {
 }
 
 export function SkinQuestions({ onBack, onComplete }: SkinQuestionsProps) {
+    const { t } = useI18n()
     const [activeIndex, setActiveIndex] = useState(0)
     const [answers, setAnswers] = useState<SkinQuestionAnswers>(createInitialAnswers)
     const [isTransitioning, setIsTransitioning] = useState(false)
 
     const activeQuestion = skinQuestions[activeIndex]
+    const questionTitle = t(`questions.${activeQuestion.id}.title`, activeQuestion.title)
+    const questionSubtitle = t(`questions.${activeQuestion.id}.subtitle`, activeQuestion.subtitle)
     const progress = Math.round(((activeIndex + 1) / skinQuestions.length) * 100)
 
     const canContinue = useMemo(() => {
@@ -67,13 +71,13 @@ export function SkinQuestions({ onBack, onComplete }: SkinQuestionsProps) {
                 className="mx-auto flex w-full max-w-3xl flex-col gap-4"
             >
                 <article className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5">
-                    <p className="text-xs uppercase tracking-[0.16em] text-skin-gray">Quick Skin Profile</p>
-                    <h1 className="mt-2 text-xl font-semibold text-skin-text">A few answers for better accuracy</h1>
-                    <p className="mt-1 text-sm text-skin-gray">Auto-advances after each selection.</p>
+                    <p className="text-xs uppercase tracking-[0.16em] text-skin-gray">{t('questions.badge', 'Quick Skin Profile')}</p>
+                    <h1 className="mt-2 text-xl font-semibold text-skin-text">{t('questions.title', 'A few answers for better accuracy')}</h1>
+                    <p className="mt-1 text-sm text-skin-gray">{t('questions.subtitle', 'Auto-advances after each selection.')}</p>
                     <div className="mt-4 h-2 overflow-hidden rounded-full bg-skin-beige">
                         <div className="h-full rounded-full bg-[#c98f9d] transition-[width] duration-300" style={{ width: `${progress}%` }} />
                     </div>
-                    <p className="mt-2 text-xs text-skin-gray">Question {activeIndex + 1} of {skinQuestions.length}</p>
+                    <p className="mt-2 text-xs text-skin-gray">{t('questions.progress', 'Question {current} of {total}', { current: activeIndex + 1, total: skinQuestions.length })}</p>
                 </article>
 
                 <motion.article
@@ -83,21 +87,26 @@ export function SkinQuestions({ onBack, onComplete }: SkinQuestionsProps) {
                     transition={{ duration: 0.25 }}
                     className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5"
                 >
-                    <h2 className="text-lg font-semibold text-skin-text">{activeQuestion.title}</h2>
-                    <p className="mt-1 text-sm text-skin-gray">{activeQuestion.subtitle}</p>
+                    <h2 className="text-lg font-semibold text-skin-text">{questionTitle}</h2>
+                    <p className="mt-1 text-sm text-skin-gray">{questionSubtitle}</p>
                     <div className="mt-4 grid gap-3">
-                        {activeQuestion.options.map((option) => (
-                            <button
-                                key={option.id}
-                                type="button"
-                                onClick={() => selectOption(option.id)}
-                                disabled={isTransitioning}
-                                className="rounded-2xl border border-skin-text/25 bg-skin-beige px-4 py-3 text-left text-sm font-medium text-skin-text shadow-soft transition hover:bg-[#eddccf] disabled:opacity-70"
-                            >
-                                <p>{option.label}</p>
-                                <p className="mt-1 text-xs font-normal text-skin-gray">{option.helper}</p>
-                            </button>
-                        ))}
+                        {activeQuestion.options.map((option) => {
+                            const optionLabel = t(`questions.${activeQuestion.id}.option.${option.id}.label`, option.label)
+                            const optionHelper = t(`questions.${activeQuestion.id}.option.${option.id}.helper`, option.helper)
+
+                            return (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => selectOption(option.id)}
+                                    disabled={isTransitioning}
+                                    className="rounded-2xl border border-skin-text/25 bg-skin-beige px-4 py-3 text-left text-sm font-medium text-skin-text shadow-soft transition hover:bg-[#eddccf] disabled:opacity-70"
+                                >
+                                    <p>{optionLabel}</p>
+                                    <p className="mt-1 text-xs font-normal text-skin-gray">{optionHelper}</p>
+                                </button>
+                            )
+                        })}
                     </div>
                 </motion.article>
 
@@ -106,7 +115,7 @@ export function SkinQuestions({ onBack, onComplete }: SkinQuestionsProps) {
                     onClick={onBack}
                     className="rounded-2xl border border-skin-text/30 bg-skin-white px-4 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#f7efe8]"
                 >
-                    Back to Preview
+                    {t('questions.backPreview', 'Back to Preview')}
                 </button>
             </motion.section>
         </main>

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { useCamera } from './hooks/useCamera'
+import { useI18n } from './i18n/I18nProvider'
 import { CameraPage } from './pages/Camera'
 import { History } from './pages/History'
 import Home from './pages/Home'
@@ -54,6 +55,18 @@ const getInitialSkipTipsPreference = (): boolean => {
 }
 
 function App() {
+  const { t } = useI18n()
+
+  const createDefaultFaceDetection = (): FaceDetectionOutcome => ({
+    status: 'no-face',
+    message: null,
+    guidance: t('camera.alignFace', 'Align your face inside the circle'),
+    clarity: 0,
+    faceBox: null,
+    landmarks: [],
+    faceCount: 0,
+  })
+
   const [screen, setScreen] = useState<Screen>('landing')
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [capturedFrames, setCapturedFrames] = useState<CapturedFrame[]>([])
@@ -64,15 +77,7 @@ function App() {
   const [isDetectorLoading, setIsDetectorLoading] = useState(false)
   const [isCapturingFrames, setIsCapturingFrames] = useState(false)
   const [captureProgress, setCaptureProgress] = useState(0)
-  const [faceDetection, setFaceDetection] = useState<FaceDetectionOutcome>({
-    status: 'no-face',
-    message: null,
-    guidance: 'Align your face inside the circle',
-    clarity: 0,
-    faceBox: null,
-    landmarks: [],
-    faceCount: 0,
-  })
+  const [faceDetection, setFaceDetection] = useState<FaceDetectionOutcome>(createDefaultFaceDetection)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
@@ -136,8 +141,8 @@ function App() {
         if (!isDisposed) {
           setFaceDetection((prev) => ({
             ...prev,
-            message: 'Face detection failed. Please hold still and retry.',
-            guidance: 'Hold device steady',
+            message: t('camera.faceDetectFailed', 'Face detection failed. Please hold still and retry.'),
+            guidance: t('camera.holdSteady', 'Hold device steady'),
           }))
         }
       } finally {
@@ -180,15 +185,7 @@ function App() {
     setPreviewWarning(null)
     setIsCapturingFrames(false)
     setCaptureProgress(0)
-    setFaceDetection({
-      status: 'no-face',
-      message: null,
-      guidance: 'Align your face inside the circle',
-      clarity: 0,
-      faceBox: null,
-      landmarks: [],
-      faceCount: 0,
-    })
+    setFaceDetection(createDefaultFaceDetection())
     setScreen('camera')
     void startCamera()
     setIsDetectorLoading(true)
@@ -275,8 +272,8 @@ function App() {
         if (!quality.pass) {
           latestFailure = {
             ...faceOutcome,
-            message: quality.reason ?? faceOutcome.message ?? 'Frame quality is low, but continuing with the best available frame.',
-            guidance: 'Hold still and improve the light',
+            message: quality.reason ?? faceOutcome.message ?? t('camera.lowFrameQuality', 'Frame quality is low, but continuing with the best available frame.'),
+            guidance: t('camera.improveLight', 'Hold still and improve the light'),
           }
           lastQualityWarning = quality.reason ?? lastQualityWarning
           if (!fallbackFrame) {
@@ -292,16 +289,16 @@ function App() {
         if (fallbackFrame) {
           samples.push(fallbackFrame)
           setCaptureProgress(samples.length)
-          setPreviewWarning('Using the best available frame. Results may improve with steadier lighting.')
+          setPreviewWarning(t('preview.bestFrameWarning', 'Using the best available frame. Results may improve with steadier lighting.'))
         } else {
-          setPreviewWarning('Could not capture a stable frame. Please hold still and try again in brighter light.')
+          setPreviewWarning(t('preview.captureFailed', 'Could not capture a stable frame. Please hold still and try again in brighter light.'))
           if (latestFailure.message) {
             setFaceDetection(latestFailure)
           }
           return
         }
       } else if (lastQualityWarning) {
-        setPreviewWarning(`Using a slightly lower-quality burst. ${lastQualityWarning}`)
+        setPreviewWarning(t('preview.lowerQualityBurst', 'Using a slightly lower-quality burst. {warning}', { warning: lastQualityWarning }))
       }
 
       setCapturedImage(bestPreviewUrl ?? samples[Math.floor(samples.length / 2)]?.previewUrl ?? samples[0].previewUrl)
@@ -345,15 +342,7 @@ function App() {
     setPreviewWarning(null)
     setIsCapturingFrames(false)
     setCaptureProgress(0)
-    setFaceDetection({
-      status: 'no-face',
-      message: null,
-      guidance: 'Align your face inside the circle',
-      clarity: 0,
-      faceBox: null,
-      landmarks: [],
-      faceCount: 0,
-    })
+    setFaceDetection(createDefaultFaceDetection())
     setScreen('camera')
     void startCamera()
   }
@@ -413,16 +402,18 @@ function App() {
   }
 
   if (screen === 'preview' && capturedImage) {
-    return <Preview
-      imageSrc={capturedImage}
-      goodShots={capturedFrames.length}
-      targetShots={CAPTURE_TARGET_FRAMES}
-      onRetake={retake}
-      onAnalyze={() => {
-        setScreen('questions')
-      }}
-      warning={previewWarning}
-    />
+    return (
+      <Preview
+        imageSrc={capturedImage}
+        goodShots={capturedFrames.length}
+        targetShots={CAPTURE_TARGET_FRAMES}
+        onRetake={retake}
+        onAnalyze={() => {
+          setScreen('questions')
+        }}
+        warning={previewWarning}
+      />
+    )
   }
 
   if (screen === 'questions') {
@@ -472,12 +463,12 @@ function App() {
               ))}
             </div>
           </div>
-          <h2 className="mt-4 text-xl font-semibold">Analyzing your skin...</h2>
+          <h2 className="mt-4 text-xl font-semibold">{t('app.analyzingTitle', 'Analyzing your skin...')}</h2>
           <p className="mt-2 text-sm text-skin-gray">
-            Checking tone balance, texture smoothness, and hydration patterns.
+            {t('app.analyzingDesc', 'Checking tone balance, texture smoothness, and hydration patterns.')}
           </p>
           <p className="mt-3 rounded-2xl bg-skin-beige px-3 py-2 text-xs text-skin-gray">
-            Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results
+            {t('common.stepFlow', 'Step 1: Capture -> Step 2: Analyze -> Step 3: Results')}
           </p>
         </motion.section>
       </main>

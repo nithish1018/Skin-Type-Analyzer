@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { ResultCard } from '../components/ResultCard'
+import { useI18n } from '../i18n/I18nProvider'
 import type { ScanHistoryEntry, SkinAnalysisResult, SkinRecommendation, SkinType } from '../types/skin'
 import { buildRecentTrendSnapshot } from '../utils/trends'
 
@@ -10,6 +11,20 @@ interface ResultsProps {
     history: ScanHistoryEntry[]
     onBackHome: () => void
     onViewHistory: () => void
+}
+
+type TranslateFn = (key: string, fallback?: string, vars?: Record<string, string | number>) => string
+
+const getSkinTypeKey = (skinType: SkinType): 'oily' | 'dry' | 'normal' | 'combination' => {
+    if (skinType === 'Oily Skin') return 'oily'
+    if (skinType === 'Dry Skin') return 'dry'
+    if (skinType === 'Normal Skin') return 'normal'
+    return 'combination'
+}
+
+const getLocalizedSkinType = (skinType: SkinType, t: TranslateFn): string => {
+    const key = getSkinTypeKey(skinType)
+    return t(`skinType.${key}`, skinType)
 }
 
 const recommendations: Record<SkinType, SkinRecommendation> = {
@@ -107,10 +122,10 @@ const recommendations: Record<SkinType, SkinRecommendation> = {
     },
 }
 
-const getRiskLabel = (value: number): string => {
-    if (value >= 70) return 'High'
-    if (value >= 45) return 'Moderate'
-    return 'Low'
+const getRiskLabel = (value: number, t: TranslateFn): string => {
+    if (value >= 70) return t('results.risk.high', 'High')
+    if (value >= 45) return t('results.risk.moderate', 'Moderate')
+    return t('results.risk.low', 'Low')
 }
 
 interface MetricBar {
@@ -187,27 +202,27 @@ const createRoundedImageDataUrl = async (source: string, width: number, height: 
     return canvas.toDataURL('image/png')
 }
 
-const getHowItWasCalculated = (result: SkinAnalysisResult): string[] => {
+const getHowItWasCalculated = (result: SkinAnalysisResult, t: TranslateFn): string[] => {
     const oilinessLine = result.oiliness >= result.hydration
-        ? 'The skin looked shinier than dry, so the app leaned more toward an oily or combination type.'
-        : 'The skin looked drier than shiny, so the app leaned more toward a dry or combination type.'
+        ? t('results.calc.oilyPath', 'The skin looked shinier than dry, so the app leaned more toward an oily or combination type.')
+        : t('results.calc.dryPath', 'The skin looked drier than shiny, so the app leaned more toward a dry or combination type.')
 
     const acneLine = result.acneRisk >= 70
-        ? 'More redness and texture were detected, so acne risk was marked higher.'
+        ? t('results.calc.acneHigh', 'More redness and texture were detected, so acne risk was marked higher.')
         : result.acneRisk >= 45
-            ? 'Some redness and texture were detected, so acne risk was marked medium.'
-            : 'Only a small amount of redness and texture was detected, so acne risk was marked lower.'
+            ? t('results.calc.acneMedium', 'Some redness and texture were detected, so acne risk was marked medium.')
+            : t('results.calc.acneLow', 'Only a small amount of redness and texture was detected, so acne risk was marked lower.')
 
     const darkSpotLine = result.darkSpots >= 50
-        ? 'Darker patches stood out more, so the dark spot score is higher.'
-        : 'Only a few darker patches stood out, so the dark spot score is lower.'
+        ? t('results.calc.darkHigh', 'Darker patches stood out more, so the dark spot score is higher.')
+        : t('results.calc.darkLow', 'Only a few darker patches stood out, so the dark spot score is lower.')
 
     const confidenceLine = result.lowLighting
-        ? 'The photo was a bit dim, so the confidence score is lower than usual.'
-        : 'The photo was clear enough, so the confidence score is more dependable.'
+        ? t('results.calc.confidenceLow', 'The photo was a bit dim, so the confidence score is lower than usual.')
+        : t('results.calc.confidenceGood', 'The photo was clear enough, so the confidence score is more dependable.')
 
     return [
-        'The app looks at the captured face area and compares how shiny, dry, even, and clear the skin appears.',
+        t('results.calc.intro', 'The app looks at the captured face area and compares how shiny, dry, even, and clear the skin appears.'),
         oilinessLine,
         acneLine,
         darkSpotLine,
@@ -215,22 +230,38 @@ const getHowItWasCalculated = (result: SkinAnalysisResult): string[] => {
     ]
 }
 
+const getLocalizedRoutine = (skinType: SkinType, t: TranslateFn): SkinRecommendation => {
+    const base = recommendations[skinType]
+    const key = getSkinTypeKey(skinType)
+
+    return {
+        ...base,
+        morningRoutine: base.morningRoutine.map((step, index) => t(`results.routine.${key}.morning.${index + 1}`, step)),
+        nightRoutine: base.nightRoutine.map((step, index) => t(`results.routine.${key}.night.${index + 1}`, step)),
+        tips: base.tips.map((tip, index) => t(`results.routine.${key}.tips.${index + 1}`, tip)),
+    }
+}
+
 export function Results({ imageSrc, result, history, onBackHome, onViewHistory }: ResultsProps) {
-    const routine = recommendations[result.skinType]
-    const howItWasCalculated = getHowItWasCalculated(result)
+    const { t } = useI18n()
+    const localizedSkinType = getLocalizedSkinType(result.skinType, t)
+    const routine = getLocalizedRoutine(result.skinType, t)
+    const howItWasCalculated = getHowItWasCalculated(result, t)
     const recentTrend = buildRecentTrendSnapshot(history, result)
     const appUrl = window.location.origin + window.location.pathname
     const [isSharing, setIsSharing] = useState(false)
     const [isDownloading, setIsDownloading] = useState(false)
     const metricBars: MetricBar[] = [
-        { label: 'Oiliness', value: result.oiliness, gradient: 'linear-gradient(90deg,#D8A7B1 0%,#E8CFC1 100%)' },
-        { label: 'Hydration', value: result.hydration, gradient: 'linear-gradient(90deg,#A8C3A0 0%,#DCE8D8 100%)' },
-        { label: 'Acne Risk', value: result.acneRisk, gradient: 'linear-gradient(90deg,#D8A7B1 0%,#F1D8DF 100%)' },
+        { label: t('history.oiliness', 'Oiliness'), value: result.oiliness, gradient: 'linear-gradient(90deg,#D8A7B1 0%,#E8CFC1 100%)' },
+        { label: t('home.hydration', 'Hydration'), value: result.hydration, gradient: 'linear-gradient(90deg,#A8C3A0 0%,#DCE8D8 100%)' },
+        { label: t('home.acneRisk', 'Acne Risk'), value: result.acneRisk, gradient: 'linear-gradient(90deg,#D8A7B1 0%,#F1D8DF 100%)' },
     ]
 
     const reportWarnings = [
-        result.lowLighting ? 'Low lighting was detected. The result is still useful, but a brighter, even light can improve accuracy.' : 'Lighting looked stable during capture, which supports a more dependable result.',
-        'Blurry photos can reduce confidence. Retake with steady hands, the phone at eye level, and a clear focus lock.',
+        result.lowLighting
+            ? t('results.report.warningLowLight', 'Low lighting was detected. The result is still useful, but a brighter, even light can improve accuracy.')
+            : t('results.report.warningGoodLight', 'Lighting looked stable during capture, which supports a more dependable result.'),
+        t('results.report.warningBlur', 'Blurry photos can reduce confidence. Retake with steady hands, the phone at eye level, and a clear focus lock.'),
     ]
     const imageWeightPercent = result.weighting ? Math.round(result.weighting.imageWeight * 100) : null
     const questionnaireWeightPercent = result.weighting ? Math.round(result.weighting.questionnaireWeight * 100) : null
@@ -287,13 +318,13 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(16)
             pdf.setTextColor(text.r, text.g, text.b)
-            pdf.text('Skin Condition Analyzer Report', margin + 4, 22)
+            pdf.text(t('results.report.title', 'Skin Condition Analyzer Report'), margin + 4, 22)
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(8)
             pdf.setTextColor(gray.r, gray.g, gray.b)
             const generatedAt = new Date().toLocaleString()
-            const generatedLabel = `Generated: ${generatedAt}`
-            pdf.text('Generated from the captured photo and on-device skin analysis', margin + 4, 30)
+            const generatedLabel = t('results.report.generated', 'Generated: {value}', { value: generatedAt })
+            pdf.text(t('results.report.generatedFrom', 'Generated from the captured photo and on-device skin analysis'), margin + 4, 30)
             pdf.text(generatedLabel, margin + 4, 35)
 
             const imageTop = 45
@@ -316,13 +347,13 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                     pdf.setFont('helvetica', 'bold')
                     pdf.setFontSize(9)
                     pdf.setTextColor(gray.r, gray.g, gray.b)
-                    pdf.text(`Image could not be embedded (${reason})`, margin + 8, imageTop + 50, { maxWidth: imageWidth - 4 })
+                    pdf.text(t('results.report.imageEmbedFail', 'Image could not be embedded ({reason})', { reason }), margin + 8, imageTop + 50, { maxWidth: imageWidth - 4 })
                 }
             } else {
                 pdf.setFont('helvetica', 'bold')
                 pdf.setFontSize(11)
                 pdf.setTextColor(gray.r, gray.g, gray.b)
-                pdf.text('No image available', margin + 24, imageTop + 50)
+                pdf.text(t('results.report.noImage', 'No image available'), margin + 24, imageTop + 50)
             }
 
             const summaryX = margin + imageBoxWidth + 8
@@ -334,26 +365,31 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(14)
             pdf.setTextColor(text.r, text.g, text.b)
-            pdf.text(result.skinType, summaryX + 5, imageTop + 12)
+            pdf.text(localizedSkinType, summaryX + 5, imageTop + 12)
 
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(9)
             pdf.setTextColor(gray.r, gray.g, gray.b)
-            pdf.text(`Confidence score: ${result.confidence}%`, summaryX + 5, imageTop + 20)
+            pdf.text(t('results.confidence', 'Confidence score: {value}%', { value: result.confidence }), summaryX + 5, imageTop + 20)
 
             if (result.weighting) {
                 pdf.setFont('helvetica', 'bold')
                 pdf.setFontSize(8)
                 pdf.setTextColor(text.r, text.g, text.b)
                 pdf.text(
-                    `Weighted blend: Image ${Math.round(result.weighting.imageWeight * 100)}% + Questionnaire ${Math.round(result.weighting.questionnaireWeight * 100)}%`,
+                    t('results.report.weightedBlend', 'Weighted blend: Image {image}% + Questionnaire {questionnaire}%', {
+                        image: Math.round(result.weighting.imageWeight * 100),
+                        questionnaire: Math.round(result.weighting.questionnaireWeight * 100),
+                    }),
                     summaryX + 5,
                     imageTop + 26,
                     { maxWidth: summaryWidth - 10 },
                 )
                 pdf.setFont('helvetica', 'normal')
                 pdf.text(
-                    `Dehydration tendency (questionnaire): ${result.weighting.dehydrationTendency}%`,
+                    t('results.report.dehydrationFromQuestionnaire', 'Dehydration tendency (questionnaire): {value}%', {
+                        value: result.weighting.dehydrationTendency,
+                    }),
                     summaryX + 5,
                     imageTop + 30,
                     { maxWidth: summaryWidth - 10 },
@@ -361,12 +397,12 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             }
 
             const badgeStartY = result.weighting ? imageTop + 38 : imageTop + 30
-            drawBadge('Oiliness', `${result.oiliness}%`, summaryX + 5, badgeStartY, summaryWidth - 10, beige)
-            drawBadge('Hydration', `${result.hydration}%`, summaryX + 5, badgeStartY + 20, summaryWidth - 10, accentGreen)
-            drawBadge('Acne Risk', `${result.acneRisk}%`, summaryX + 5, badgeStartY + 40, summaryWidth - 10, { r: 247, g: 231, b: 236 })
+            drawBadge(t('history.oiliness', 'Oiliness'), `${result.oiliness}%`, summaryX + 5, badgeStartY, summaryWidth - 10, beige)
+            drawBadge(t('home.hydration', 'Hydration'), `${result.hydration}%`, summaryX + 5, badgeStartY + 20, summaryWidth - 10, accentGreen)
+            drawBadge(t('home.acneRisk', 'Acne Risk'), `${result.acneRisk}%`, summaryX + 5, badgeStartY + 40, summaryWidth - 10, { r: 247, g: 231, b: 236 })
 
             let cursorY = 145
-            cursorY = drawSectionTitle('Capture Quality Notes', cursorY)
+            cursorY = drawSectionTitle(t('results.report.captureQuality', 'Capture Quality Notes'), cursorY)
             pdf.setFillColor(255, 255, 255)
             pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
             pdf.roundedRect(margin, cursorY, contentWidth, 28, 5, 5, 'F')
@@ -378,7 +414,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             })
 
             cursorY += 38
-            cursorY = drawSectionTitle('Recommended Tips', cursorY)
+            cursorY = drawSectionTitle(t('results.report.recommendedTips', 'Recommended Tips'), cursorY)
             pdf.setFillColor(255, 255, 255)
             pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
             pdf.roundedRect(margin, cursorY, contentWidth, 44, 5, 5, 'F')
@@ -391,7 +427,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
 
             cursorY += 54
             const calculatedTitleHeight = 6
-            const calculatedIntro = 'The app looks at the captured face area and compares how shiny, dry, even, and clear the skin appears.'
+            const calculatedIntro = t('results.calc.intro', 'The app looks at the captured face area and compares how shiny, dry, even, and clear the skin appears.')
             const calculatedLines = [calculatedIntro, ...howItWasCalculated.slice(1)]
             const calculatedCardText = calculatedLines.flatMap((line, index) => {
                 const prefix = index === 0 ? '- ' : '- '
@@ -404,7 +440,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                 pdf.rect(0, 0, pageWidth, pageHeight, 'F')
                 cursorY = 20
             }
-            cursorY = drawSectionTitle('How this was calculated', cursorY)
+            cursorY = drawSectionTitle(t('results.howCalculated', 'How this was calculated'), cursorY)
             pdf.setFillColor(255, 255, 255)
             pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
             pdf.roundedRect(margin, cursorY, contentWidth, calculatedCardHeight, 5, 5, 'F')
@@ -424,7 +460,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                 pdf.rect(0, 0, pageWidth, pageHeight, 'F')
                 cursorY = 20
             }
-            cursorY = drawSectionTitle('Suggested Routine', cursorY)
+            cursorY = drawSectionTitle(t('results.report.suggestedRoutine', 'Suggested Routine'), cursorY)
             const routineCardWidth = (contentWidth - 5) / 2
             pdf.setFillColor(255, 255, 255)
             pdf.setDrawColor(accentSoft.r, accentSoft.g, accentSoft.b)
@@ -434,8 +470,8 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(10)
             pdf.setTextColor(text.r, text.g, text.b)
-            pdf.text('Morning', margin + 5, cursorY + 8)
-            pdf.text('Night', margin + routineCardWidth + 10, cursorY + 8)
+            pdf.text(t('results.morning', 'Morning'), margin + 5, cursorY + 8)
+            pdf.text(t('results.night', 'Night'), margin + routineCardWidth + 10, cursorY + 8)
 
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(8)
@@ -454,11 +490,11 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(10)
             pdf.setTextColor(122, 78, 12)
-            pdf.text('Important: Treat this as guidance, not a clinical diagnosis.', margin + 5, warningY + 8)
+            pdf.text(t('results.report.importantTitle', 'Important: Treat this as guidance, not a clinical diagnosis.'), margin + 5, warningY + 8)
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(9)
             pdf.setTextColor(122, 78, 12)
-            pdf.text('Great for trends and routine planning. For medical concerns, consult a dermatologist.', margin + 5, warningY + 15, { maxWidth: contentWidth - 10 })
+            pdf.text(t('results.report.importantBody', 'Great for trends and routine planning. For medical concerns, consult a dermatologist.'), margin + 5, warningY + 15, { maxWidth: contentWidth - 10 })
 
             const footerY = warningY + 28
             pdf.setFillColor(accent.r, accent.g, accent.b)
@@ -466,7 +502,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(8)
             pdf.setTextColor(255, 255, 255)
-            pdf.text('Source of information', margin + 5, footerY + 4)
+            pdf.text(t('results.report.source', 'Source of information'), margin + 5, footerY + 4)
             pdf.setFont('helvetica', 'normal')
             pdf.text(appUrl, margin + 5, footerY + 9, { maxWidth: contentWidth - 10 })
 
@@ -474,7 +510,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
         } catch (error) {
             console.error('PDF report generation failed', error)
             const reason = error instanceof Error ? error.message : 'Unknown error'
-            window.alert(`Unable to generate the PDF report right now. ${reason}`)
+            window.alert(t('results.report.fail', 'Unable to generate the PDF report right now. {reason}', { reason }))
         } finally {
             setIsDownloading(false)
         }
@@ -485,14 +521,14 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             return
         }
 
-        const baseShareText = `Skin Type: ${result.skinType}\nConfidence: ${result.confidence}%\nOiliness: ${result.oiliness}%\nHydration: ${result.hydration}%\nAcne Risk: ${result.acneRisk}%`
-        const clipboardShareText = `${baseShareText}\nApp: ${appUrl}`
+        const baseShareText = `${t('results.share.skinType', 'Skin Type')}: ${localizedSkinType}\n${t('history.confidence', 'Confidence')}: ${result.confidence}%\n${t('history.oiliness', 'Oiliness')}: ${result.oiliness}%\n${t('home.hydration', 'Hydration')}: ${result.hydration}%\n${t('home.acneRisk', 'Acne Risk')}: ${result.acneRisk}%`
+        const clipboardShareText = `${baseShareText}\n${t('results.share.app', 'App')}: ${appUrl}`
 
         setIsSharing(true)
         try {
             if (navigator.share) {
                 await navigator.share({
-                    title: 'My Skin Analysis Result',
+                    title: t('results.share.title', 'My Skin Analysis Result'),
                     text: baseShareText,
                     url: appUrl,
                 })
@@ -500,21 +536,29 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
             }
 
             await navigator.clipboard.writeText(clipboardShareText)
-            window.alert('Result copied to clipboard')
+            window.alert(t('results.share.copied', 'Result copied to clipboard'))
         } catch (error) {
             const reason = error instanceof Error ? error.message : ''
 
             if (navigator.clipboard) {
                 try {
                     await navigator.clipboard.writeText(clipboardShareText)
-                    window.alert(reason ? `Share unavailable. Result copied instead. (${reason})` : 'Share unavailable. Result copied instead.')
+                    window.alert(
+                        reason
+                            ? t('results.share.unavailableWithReason', 'Share unavailable. Result copied instead. ({reason})', { reason })
+                            : t('results.share.unavailable', 'Share unavailable. Result copied instead.'),
+                    )
                     return
                 } catch {
                     // fall through to the alert below
                 }
             }
 
-            window.alert(reason ? `Unable to share right now. (${reason})` : 'Unable to share right now.')
+            window.alert(
+                reason
+                    ? t('results.share.failWithReason', 'Unable to share right now. ({reason})', { reason })
+                    : t('results.share.fail', 'Unable to share right now.'),
+            )
         } finally {
             setIsSharing(false)
         }
@@ -529,20 +573,20 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                 className="mx-auto flex w-full max-w-5xl flex-col gap-5"
             >
                 <article className="overflow-hidden rounded-3xl border border-skin-text/20 bg-skin-white p-6 shadow-card ring-1 ring-skin-text/5 backdrop-blur-xl">
-                    <p className="text-xs uppercase tracking-[0.2em] text-skin-gray">Analysis Complete</p>
-                    <p className="mt-2 rounded-2xl bg-skin-beige px-3 py-2 text-xs text-skin-gray">Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-skin-gray">{t('results.complete', 'Analysis Complete')}</p>
+                    <p className="mt-2 rounded-2xl bg-skin-beige px-3 py-2 text-xs text-skin-gray">{t('common.stepFlow', 'Step 1: Capture -> Step 2: Analyze -> Step 3: Results')}</p>
                     <div className="mt-4 flex items-center gap-4">
                         <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[linear-gradient(145deg,#E8CFC1_0%,#D8A7B1_100%)] text-2xl shadow-soft">
                             <span role="img" aria-label="Face">🧴</span>
                         </div>
                         <div>
-                            <h1 className="text-3xl font-semibold text-skin-text">{result.skinType}</h1>
-                            <p className="mt-1 text-sm text-skin-gray">Confidence score: {result.confidence}%</p>
+                            <h1 className="text-3xl font-semibold text-skin-text">{localizedSkinType}</h1>
+                            <p className="mt-1 text-sm text-skin-gray">{t('results.confidence', 'Confidence score: {value}%', { value: result.confidence })}</p>
                         </div>
                     </div>
                     {result.lowLighting && (
                         <p className="alert-warning mt-4 rounded-xl px-3 py-2 text-xs">
-                            Low lighting detected. Results may improve with brighter, even light.
+                            {t('results.lowLight', 'Low lighting detected. Results may improve with brighter, even light.')}
                         </p>
                     )}
                 </article>
@@ -554,7 +598,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                         transition={{ duration: 0.4, delay: 0.05 }}
                         className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-card ring-1 ring-skin-text/5"
                     >
-                        <h2 className="text-lg font-semibold text-skin-text">Skin Signals</h2>
+                        <h2 className="text-lg font-semibold text-skin-text">{t('results.skinSignals', 'Skin Signals')}</h2>
                         <div className="mt-4 space-y-4">
                             {metricBars.map((metric, index) => (
                                 <div key={metric.label}>
@@ -583,31 +627,31 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                             transition={{ duration: 0.4, delay: 0.09 }}
                             className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
                         >
-                            <h2 className="text-lg font-semibold text-skin-text">Weighted Result Blend</h2>
+                            <h2 className="text-lg font-semibold text-skin-text">{t('results.weightedTitle', 'Weighted Result Blend')}</h2>
                             <p className="mt-1 text-sm text-skin-gray">
-                                Final result combines photo signals with your skin profile answers.
+                                {t('results.weightedDesc', 'Final result combines photo signals with your skin profile answers.')}
                             </p>
                             <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
                                 <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                    <p className="text-[11px] leading-tight text-skin-gray">Image Weight</p>
+                                    <p className="text-[11px] leading-tight text-skin-gray">{t('results.imageWeight', 'Image Weight')}</p>
                                     <p className="mt-1 text-sm font-semibold text-skin-text">{imageWeightPercent}%</p>
                                 </div>
                                 <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                    <p className="text-[11px] leading-tight text-skin-gray">Questionnaire Weight</p>
+                                    <p className="text-[11px] leading-tight text-skin-gray">{t('results.questionnaireWeight', 'Questionnaire Weight')}</p>
                                     <p className="mt-1 text-sm font-semibold text-skin-text">{questionnaireWeightPercent}%</p>
                                 </div>
                                 <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige px-3 py-2">
-                                    <p className="text-[11px] leading-tight text-skin-gray">Dehydration Tendency</p>
+                                    <p className="text-[11px] leading-tight text-skin-gray">{t('results.dehydration', 'Dehydration Tendency')}</p>
                                     <p className="mt-1 text-sm font-semibold text-skin-text">{dehydrationTendencyPercent}%</p>
                                 </div>
                             </div>
                             <div className="mt-3 space-y-1 text-xs text-skin-gray">
                                 <p>
-                                    Image-only type:{' '}
+                                    {t('results.imageOnlyType', 'Image-only type:')}{' '}
                                     <span className="font-semibold text-skin-text">{result.weighting.imageOnlySkinType}</span>
                                 </p>
                                 <p>
-                                    Questionnaire type:{' '}
+                                    {t('results.questionnaireType', 'Questionnaire type:')}{' '}
                                     <span className="font-semibold text-skin-text">{result.weighting.questionnaireSkinType}</span>
                                 </p>
                             </div>
@@ -621,7 +665,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                             transition={{ duration: 0.4, delay: 0.11 }}
                             className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5 xl:col-span-2"
                         >
-                            <h2 className="text-lg font-semibold text-skin-text">Trend vs Recent Scans</h2>
+                            <h2 className="text-lg font-semibold text-skin-text">{t('results.trendTitle', 'Trend vs Recent Scans')}</h2>
                             <p className="mt-1 text-sm text-skin-gray">{recentTrend.title}</p>
                             <div className="mt-4 space-y-3">
                                 {recentTrend.metrics.map((metric) => {
@@ -648,7 +692,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                                                     <p className="mt-1 text-sm font-semibold text-skin-text">{metric.baseline === null ? '—' : `${metric.baseline.toFixed(0)}%`}</p>
                                                 </div>
                                                 <div>
-                                                    <p>Change</p>
+                                                    <p>{t('results.change', 'Change')}</p>
                                                     <p className={`mt-1 text-sm font-semibold ${statusTone}`}>{deltaText}%</p>
                                                 </div>
                                             </div>
@@ -660,8 +704,8 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                     )}
 
                     <div className="grid gap-5 sm:grid-cols-2 xl:col-span-2">
-                        <ResultCard title="Dark Spots" value={`${result.darkSpots}%`} helper="Pigmentation tendency" />
-                        <ResultCard title="Acne Risk Label" value={getRiskLabel(result.acneRisk)} helper={`${result.acneRisk}% probability`} />
+                        <ResultCard title={t('results.darkSpots', 'Dark Spots')} value={`${result.darkSpots}%`} helper={t('results.pigmentation', 'Pigmentation tendency')} />
+                        <ResultCard title={t('results.acneRiskLabel', 'Acne Risk Label')} value={getRiskLabel(result.acneRisk, t)} helper={t('results.probability', '{value}% probability', { value: result.acneRisk })} />
                     </div>
                 </div>
 
@@ -672,9 +716,9 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                         transition={{ duration: 0.45, delay: 0.12 }}
                         className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5 xl:col-span-2"
                     >
-                        <h2 className="text-lg font-semibold text-skin-text">How this was calculated</h2>
+                        <h2 className="text-lg font-semibold text-skin-text">{t('results.howCalculated', 'How this was calculated')}</h2>
                         <p className="mt-2 text-sm text-skin-gray">
-                            This result comes from the face photo you captured and the stable frames from the burst.
+                            {t('results.howCalculatedDesc', 'This result comes from the face photo you captured and the stable frames from the burst.')}
                         </p>
                         <ul className="mt-3 space-y-2 text-sm text-skin-gray">
                             {howItWasCalculated.map((line) => (
@@ -697,9 +741,9 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                         transition={{ duration: 0.4, delay: 0.16 }}
                         className="rounded-3xl border border-[#e6b85a]/70 bg-[linear-gradient(145deg,#fcf3dd_0%,#fff7e8_100%)] p-4 shadow-soft ring-1 ring-[#e6b85a]/35"
                     >
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a4e0c]">Friendly Reality Check</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a4e0c]">{t('results.realityCheck', 'Friendly Reality Check')}</p>
                         <p className="mt-2 text-sm font-medium text-[#7a4e0c]">
-                            Useful for trends, not a final diagnosis. Treat this as smart guidance and confirm medical concerns with a dermatologist.
+                            {t('results.realityCheckDesc', 'Useful for trends, not a final diagnosis. Treat this as smart guidance and confirm medical concerns with a dermatologist.')}
                         </p>
                     </motion.article>
 
@@ -709,10 +753,10 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                         transition={{ duration: 0.45, delay: 0.2 }}
                         className="rounded-3xl border border-skin-text/20 bg-skin-white p-5 shadow-soft ring-1 ring-skin-text/5"
                     >
-                        <h2 className="text-lg font-semibold text-skin-text">Recommended Routine</h2>
+                        <h2 className="text-lg font-semibold text-skin-text">{t('results.routine', 'Recommended Routine')}</h2>
                         <div className="mt-3 grid gap-4 text-sm text-skin-text md:grid-cols-2 xl:grid-cols-1">
                             <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige p-3">
-                                <h3 className="font-medium text-skin-text">Morning</h3>
+                                <h3 className="font-medium text-skin-text">{t('results.morning', 'Morning')}</h3>
                                 <ul className="mt-2 space-y-1 text-skin-gray">
                                     {routine.morningRoutine.map((step) => (
                                         <li key={step}>• {step}</li>
@@ -720,7 +764,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                                 </ul>
                             </div>
                             <div className="rounded-2xl border border-skin-tone/80 bg-skin-beige p-3">
-                                <h3 className="font-medium text-skin-text">Night</h3>
+                                <h3 className="font-medium text-skin-text">{t('results.night', 'Night')}</h3>
                                 <ul className="mt-2 space-y-1 text-skin-gray">
                                     {routine.nightRoutine.map((step) => (
                                         <li key={step}>• {step}</li>
@@ -741,14 +785,14 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                             onClick={onBackHome}
                             className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                         >
-                            Back to Home
+                            {t('common.backHome', 'Back to Home')}
                         </button>
                         <button
                             type="button"
                             onClick={onViewHistory}
                             className="rounded-2xl border border-skin-text/30 bg-skin-beige px-3 py-3 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                         >
-                            History
+                            {t('common.history', 'History')}
                         </button>
                         <button
                             type="button"
@@ -758,7 +802,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                             disabled={isSharing}
                             className="rounded-2xl bg-[#c98f9d] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#b98190] disabled:opacity-60"
                         >
-                            {isSharing ? 'Sharing...' : 'Share Result'}
+                            {isSharing ? t('results.sharing', 'Sharing...') : t('results.share', 'Share Result')}
                         </button>
                         <button
                             type="button"
@@ -768,7 +812,7 @@ export function Results({ imageSrc, result, history, onBackHome, onViewHistory }
                             disabled={isDownloading}
                             className="rounded-2xl bg-[#A8C3A0] px-3 py-3 text-sm font-semibold text-white shadow-soft hover:bg-[#95af8d] disabled:opacity-60"
                         >
-                            {isDownloading ? 'Creating...' : 'Download Report'}
+                            {isDownloading ? t('results.creating', 'Creating...') : t('results.download', 'Download Report')}
                         </button>
                     </div>
                 </div>

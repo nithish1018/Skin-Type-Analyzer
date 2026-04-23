@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { CaptureButton } from './CaptureButton'
+import { useI18n } from '../i18n/I18nProvider'
 import type { FaceBox, FaceLandmarkPoint } from '../types/face'
 import type { CameraFacing } from '../types/skin'
 
@@ -49,6 +50,7 @@ export function CameraView({
     onRetryPermission,
     onSelectDevice,
 }: CameraViewProps) {
+    const { t } = useI18n()
     const stageRef = useRef<HTMLDivElement | null>(null)
     const [stageSize, setStageSize] = useState({ width: 0, height: 0 })
     const [videoSize, setVideoSize] = useState({ width: 0, height: 0 })
@@ -132,9 +134,9 @@ export function CameraView({
 
     const hasAlignedFace = faceGuidance === 'Face aligned' && !faceMessage && !error
     const statusText = isDetectorLoading
-        ? 'Face detection is loading... please wait'
+        ? t('camera.loadingDetector', 'Face detection is loading... please wait')
         : isCapturingFrames
-            ? `Good shots ${Math.min(captureProgress, captureTarget)}/${captureTarget}`
+            ? t('camera.goodShots', 'Good shots {current}/{target}', { current: Math.min(captureProgress, captureTarget), target: captureTarget })
             : (error ? error : (faceMessage ?? faceGuidance))
     const statusClassName = hasAlignedFace
         ? 'border-skin-green/70 bg-skin-green/35 text-skin-text'
@@ -192,36 +194,36 @@ export function CameraView({
 
                 <header className="absolute left-0 top-0 flex w-full items-center justify-between gap-3 p-4">
                     <div className="rounded-2xl border border-skin-text/25 bg-skin-white px-4 py-2 text-sm font-medium text-skin-text shadow-soft backdrop-blur-md">
-                        {cameraFacing === 'user' ? 'Front Camera' : 'Back Camera'}
+                        {cameraFacing === 'user' ? t('camera.front', 'Front Camera') : t('camera.back', 'Back Camera')}
                     </div>
                     <button
                         type="button"
                         onClick={onSwitchCamera}
                         className="rounded-full border border-skin-text/20 bg-[#c98f9d] px-4 py-2 text-sm font-semibold text-white shadow-soft backdrop-blur-md"
                     >
-                        Switch
+                        {t('camera.switch', 'Switch')}
                     </button>
                 </header>
             </div>
 
             <div className="border-t border-skin-text/20 bg-skin-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-card backdrop-blur-xl">
                 <div className="mx-auto flex w-full max-w-4xl flex-col gap-3">
-                    <p className="text-center text-xs uppercase tracking-[0.16em] text-skin-gray">Step 1: Capture -&gt; Step 2: Analyze -&gt; Step 3: Results</p>
+                    <p className="text-center text-xs uppercase tracking-[0.16em] text-skin-gray">{t('common.stepFlow', 'Step 1: Capture -> Step 2: Analyze -> Step 3: Results')}</p>
                     <p className={`rounded-xl border px-3 py-2 text-center text-sm font-semibold backdrop-blur-md ${statusClassName}`}>
-                        {hasAlignedFace ? 'Face position: Good' : statusText}
+                        {hasAlignedFace ? t('camera.faceGood', 'Face position: Good') : statusText}
                     </p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                         <p className="rounded-xl border border-skin-text/15 bg-skin-beige px-3 py-2 text-center font-medium text-skin-text">
-                            Lighting: {faceMessage?.toLowerCase().includes('light') ? 'Poor' : 'Good'}
+                            {t('camera.lighting', 'Lighting')}: {faceMessage?.toLowerCase().includes('light') ? t('camera.poor', 'Poor') : t('camera.good', 'Good')}
                         </p>
                         <p className="rounded-xl border border-skin-text/15 bg-skin-beige px-3 py-2 text-center font-medium text-skin-text">
-                            Face Position: {hasAlignedFace ? 'Good' : 'Adjust'}
+                            {t('camera.facePosition', 'Face Position')}: {hasAlignedFace ? t('camera.good', 'Good') : t('camera.adjust', 'Adjust')}
                         </p>
                     </div>
 
                     {videoDevices.length > 1 && (
                         <label className="w-full rounded-xl border border-skin-text/20 bg-skin-white px-3 py-2 text-xs text-skin-gray backdrop-blur-md">
-                            Camera Lens
+                            {t('camera.cameraLens', 'Camera Lens')}
                             <select
                                 value={selectedDeviceId}
                                 onChange={(event) => onSelectDevice(event.target.value)}
@@ -229,7 +231,7 @@ export function CameraView({
                             >
                                 {videoDevices.map((device, index) => (
                                     <option key={device.deviceId} value={device.deviceId}>
-                                        {device.label || `Camera ${index + 1}`}
+                                        {device.label || t('camera.cameraIndex', 'Camera {index}', { index: index + 1 })}
                                     </option>
                                 ))}
                             </select>
@@ -238,7 +240,7 @@ export function CameraView({
 
                     {isIOSSafari && (error || !stream) && (
                         <p className="alert-warning rounded-xl px-3 py-2 text-center text-xs">
-                            iOS Safari tip: if camera stays black, switch lens or tap Retry Access.
+                            {t('camera.iosTip', 'iOS Safari tip: if camera stays black, switch lens or tap Retry Access.')}
                         </p>
                     )}
 
@@ -248,22 +250,25 @@ export function CameraView({
                             onClick={onRetryPermission}
                             className="rounded-xl border border-skin-text/30 bg-skin-beige px-4 py-2 text-sm font-semibold text-skin-text shadow-soft hover:bg-[#eddccf]"
                         >
-                            Retry Access
+                            {t('camera.retryAccess', 'Retry Access')}
                         </button>
                     )}
 
                     {isStarting && (
-                        <p className="text-center text-sm text-skin-gray">Starting camera...</p>
+                        <p className="text-center text-sm text-skin-gray">{t('camera.starting', 'Starting camera...')}</p>
                     )}
                     {isDetectorLoading && (
-                        <p className="text-center text-xs text-skin-gray">Initializing detector engine...</p>
+                        <p className="text-center text-xs text-skin-gray">{t('camera.initializing', 'Initializing detector engine...')}</p>
                     )}
                     {isCapturingFrames && (
-                        <p className="text-center text-xs text-skin-gray">Capturing a short burst for a more reliable result.</p>
+                        <p className="text-center text-xs text-skin-gray">{t('camera.capturingBurst', 'Capturing a short burst for a more reliable result.')}</p>
                     )}
                     {captureTarget > 0 && (
                         <p className="text-center text-xs text-skin-gray">
-                            Better shots captured: {Math.min(captureProgress, captureTarget)}/{captureTarget}
+                            {t('camera.betterShots', 'Better shots captured: {current}/{target}', {
+                                current: Math.min(captureProgress, captureTarget),
+                                target: captureTarget,
+                            })}
                         </p>
                     )}
                     <div className="flex justify-center pb-1 pt-2">
